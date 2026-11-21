@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dathua-bg: #12161a;
+  --color-dathua-card: #1b2228;
+  --color-dathua-border: #2b3540;
+  --color-dathua-orange: #d96b14;
+  --color-dathua-orange-hover: #b45309;
+  --color-dathua-text-soft: #9ca3af;
+
+  /* Paleta de estado — reservada, nunca se reutiliza como color de marca/serie.
+     Validada con el validador de contraste del skill de dataviz contra
+     --color-dathua-bg (#12161A): good 5.42:1, warning 9.91:1, serious 6.89:1,
+     critical 3.78:1 — las 4 superan el mínimo de 3:1 en fondo oscuro. */
+  --color-status-good: #0ca30c;
+  --color-status-warning: #fab219;
+  --color-status-serious: #ec835a;
+  --color-status-critical: #d03b3b;
+  --color-status-neutral: #6b7280;
+
+  --font-sans: 'Inter', sans-serif;
+  --font-heading: 'Space Grotesk', sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-dathua-bg);
+  }
+}
+
+/* Fondo animado */
+@keyframes glow-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-20px, 20px) scale(1.1); }
+}
+.animate-glow {
+  animation: glow-float 8s ease-in-out infinite;
+}
+
+/* Nodos / pulsos del hero */
+@keyframes pulse-node {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+.animate-pulse-node {
+  animation: pulse-node 2.5s ease-in-out infinite;
+}

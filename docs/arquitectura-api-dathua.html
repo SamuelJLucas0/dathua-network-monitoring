@@ -1,0 +1,689 @@
+<title>Arquitectura API DatHua</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@600;700&display=swap">
+<style>
+/* Layout: misma retícula técnica del Mapa de datos DatHua; capas del sistema en columnas, endpoints en una tabla filtrable. Oscuro primero, acento naranja de marca. */
+:root{
+  --bg:#0E1217; --surface:#161B22; --surface-2:#1B2228; --ink:#F3F4F6; --ink-2:#9CA3AF; --ink-3:#6B7280; --line:#2B3540; --line-strong:#556372;
+  --accent:#E8833A;
+  --c-cliente:#8E96F2; --c-api:#E8833A; --c-datos:#5FC27D; --c-ia:#3EC0BD; --c-ext:#9CA3AF;
+  --m-get:#5FC27D; --m-post:#8E96F2; --m-put:#3EC0BD; --m-patch:#E8A23A; --m-delete:#F07A80;
+  --ok:#5FC27D; --warn:#E8A23A; --bad:#F07A80;
+  --code-bg:#0A0D11; --code-ink:#E5E7EB; --code-dim:#6B7280; --code-key:#E8833A; --code-str:#5FC27D;
+  --f-display:"Space Grotesk","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Inter","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+  --bg:#F3F4F6; --surface:#FFFFFF; --surface-2:#E9ECEF; --ink:#12161A; --ink-2:#4B5563; --ink-3:#6B7280; --line:#D3D9DF; --line-strong:#8C98A4;
+  --accent:#B45309;
+  --c-cliente:#4B53C4; --c-api:#B45309; --c-datos:#2B7F44; --c-ia:#0D7F80; --c-ext:#5C6875;
+  --m-get:#2B7F44; --m-post:#4B53C4; --m-put:#0D7F80; --m-patch:#A35F0B; --m-delete:#B8323A;
+  --ok:#2B7F44; --warn:#A35F0B; --bad:#B8323A;
+  --code-bg:#12161A; --code-ink:#E5E7EB; --code-dim:#8C98A4; --code-key:#F0A060; --code-str:#7ED69A; color-scheme:light }}
+:root[data-theme="light"]{
+  --bg:#F3F4F6; --surface:#FFFFFF; --surface-2:#E9ECEF; --ink:#12161A; --ink-2:#4B5563; --ink-3:#6B7280; --line:#D3D9DF; --line-strong:#8C98A4;
+  --accent:#B45309;
+  --c-cliente:#4B53C4; --c-api:#B45309; --c-datos:#2B7F44; --c-ia:#0D7F80; --c-ext:#5C6875;
+  --m-get:#2B7F44; --m-post:#4B53C4; --m-put:#0D7F80; --m-patch:#A35F0B; --m-delete:#B8323A;
+  --ok:#2B7F44; --warn:#A35F0B; --bad:#B8323A;
+  --code-bg:#12161A; --code-ink:#E5E7EB; --code-dim:#8C98A4; --code-key:#F0A060; --code-str:#7ED69A; color-scheme:light }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 72px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
+h2{font-size:24px;font-weight:700;letter-spacing:-.01em}
+h3{font-size:16px;font-weight:600}
+p{margin:0}
+code,.mono{font-family:var(--f-mono);font-size:.88em}
+a{color:var(--accent)}
+.lede{color:var(--ink-2);max-width:70ch;margin-top:10px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.eyebrow b{color:var(--accent);font-weight:500}
+.note{font-size:13px;color:var(--ink-3);max-width:90ch}
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);margin-inline:-16px;padding:10px 16px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:22px}
+.nav a{flex:none;color:var(--ink-2);text-decoration:none;font-size:13px;font-weight:500;padding:6px 12px;border-radius:999px;border:1px solid transparent}
+.nav a:hover,.nav a:focus-visible{border-color:var(--line);color:var(--ink);outline:none;background:var(--surface)}
+section{margin-top:56px;display:grid;gap:16px;scroll-margin-top:64px}
+.sec-head{display:grid;gap:6px}
+.sec-head p{color:var(--ink-2);max-width:76ch}
+.c-cliente{--c:var(--c-cliente)} .c-api{--c:var(--c-api)} .c-datos{--c:var(--c-datos)} .c-ia{--c:var(--c-ia)} .c-ext{--c:var(--c-ext)}
+
+.stack{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.stack span{font-family:var(--f-mono);font-size:12px;padding:3px 9px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink-2)}
+.stack b{color:var(--ink);font-weight:500}
+
+.focus{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
+.focus>div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:8px;align-content:start;min-width:0}
+.focus .who{font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;color:var(--c)}
+.focus b{font-family:var(--f-display);font-weight:600;font-size:16px}
+.focus p{font-size:14px;color:var(--ink-2)}
+.focus ul{margin:0;padding-left:18px;display:grid;gap:3px;font-size:13.5px;color:var(--ink-2)}
+.focus .next{border-color:var(--c-api);background:color-mix(in srgb,var(--c-api) 8%,var(--surface))}
+
+.scroller{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:radial-gradient(circle,var(--line) 1px,transparent 1.2px) 0 0/22px 22px,var(--surface-2)}
+.sys{position:relative;display:grid;grid-template-columns:repeat(4,214px);column-gap:88px;padding:52px 28px 28px;width:max-content;align-items:start}
+.sys-col{display:flex;flex-direction:column;gap:18px;position:relative}
+.sys-col>.lbl{position:absolute;top:-30px;left:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--c);font-weight:500}
+.sys svg{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+.box{position:relative;z-index:1;background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--c);border-radius:8px;padding:10px 12px;display:grid;gap:3px}
+.box b{font-size:14px;font-weight:600}
+.box code{font-size:11.5px;color:var(--ink-3)}
+.box p{font-size:12px;color:var(--ink-2);line-height:1.4}
+.box.todo{border-style:dashed;border-top-style:solid}
+.sys svg path{fill:none;stroke:var(--line-strong);stroke-width:1.5}
+.sys svg path.dash{stroke-dasharray:5 4}
+.sys svg circle{fill:var(--surface);stroke:var(--line-strong);stroke-width:1.2}
+.sys svg text{fill:var(--ink);font-family:var(--f-mono);font-size:10.5px;font-weight:500}
+.edges{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:6px 22px;font-size:13.5px;color:var(--ink-2)}
+.edges li{display:flex;gap:10px;align-items:baseline;min-width:0}
+.edges .n{flex:none;width:20px;height:20px;border-radius:50%;border:1px solid var(--line-strong);display:inline-grid;place-items:center;font-family:var(--f-mono);font-size:10.5px;color:var(--ink);background:var(--surface)}
+.edges b{color:var(--ink);font-weight:500}
+
+.pipe{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 12px;display:grid;gap:5px;align-content:start;min-width:0}
+.stage .n{font-family:var(--f-mono);font-size:11px;color:var(--ink-3)}
+.stage b{font-size:14px;font-weight:600;line-height:1.25}
+.stage code{font-size:11.5px;color:var(--c-api);word-break:break-word}
+.stage p{font-size:12.5px;color:var(--ink-2);line-height:1.45}
+.stage .no{font-size:12px;color:var(--bad);border-top:1px dashed var(--line);padding-top:5px;font-family:var(--f-mono)}
+.stage.opt{border-style:dashed}
+h3.sub{margin-top:8px}
+
+.cols2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:16px;align-items:start}
+.tree{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 0;font-family:var(--f-mono);font-size:13px;overflow-x:auto;min-width:0}
+.tree div{display:grid;grid-template-columns:minmax(220px,auto) 1fr;gap:14px;padding:3px 16px;align-items:baseline}
+.tree div:hover{background:var(--surface-2)}
+.tree .f{color:var(--ink);white-space:pre}
+.tree .d{color:var(--accent);white-space:pre;font-weight:500}
+.tree .x{font-family:var(--f-body);font-size:12.5px;color:var(--ink-2);min-width:180px}
+
+.clients{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px}
+.client{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:8px;align-content:start;min-width:0;border-left:3px solid var(--c)}
+.client code.big{font-size:14px;color:var(--ink);font-weight:500}
+.client .k{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.client p,.client li{font-size:13.5px;color:var(--ink-2)}
+.client ul{margin:0;padding-left:18px;display:grid;gap:3px}
+.client .warn{font-size:12.5px;color:var(--bad)}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.toolbar button{font:inherit;font-size:13px;padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer}
+.toolbar button[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.toolbar button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{font-family:var(--f-display);font-weight:600;font-size:13px;background:var(--surface-2);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td{color:var(--ink-2)}
+td.path{font-family:var(--f-mono);font-size:12.5px;white-space:nowrap;color:var(--ink)}
+td.fn{font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
+td.desc{min-width:260px}
+td.code{font-family:var(--f-mono);font-size:12.5px;white-space:nowrap;color:var(--ink)}
+td.http{font-family:var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+td.first{color:var(--ink);font-weight:500;min-width:170px}
+.m{--mc:var(--ink-3);display:inline-block;font-family:var(--f-mono);font-size:10.5px;font-weight:500;padding:1px 6px;border-radius:4px;border:1px solid var(--mc);color:var(--mc);min-width:52px;text-align:center}
+.m.GET{--mc:var(--m-get)} .m.POST{--mc:var(--m-post)} .m.PUT{--mc:var(--m-put)} .m.PATCH{--mc:var(--m-patch)} .m.DELETE{--mc:var(--m-delete)}
+.chain{display:flex;flex-wrap:wrap;gap:4px;min-width:200px}
+.chain span{font-family:var(--f-mono);font-size:11px;padding:1px 6px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.chain span.lim{border-color:color-mix(in srgb,var(--bad) 50%,var(--line))}
+.chain span.jwt{border-color:color-mix(in srgb,var(--c-cliente) 60%,var(--line))}
+.chain span.key{border-color:color-mix(in srgb,var(--c-api) 60%,var(--line))}
+.chain span.none{border-style:dashed;color:var(--ink-3)}
+.cred{font-family:var(--f-mono);font-size:11px;white-space:nowrap;display:inline-block;padding:0 6px;border-radius:4px;border:1px solid var(--line)}
+.cred.jwt{color:var(--c-cliente);border-color:var(--c-cliente)}
+.cred.key{color:var(--c-api);border-color:var(--c-api)}
+.cred.pub{color:var(--ink-3)}
+.count{font-family:var(--f-mono);font-size:12px;color:var(--ink-3);margin-left:auto}
+
+.road{display:grid;gap:14px}
+.mod{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
+.mod-h{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;padding:12px 16px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--c) 9%,var(--surface))}
+.mod-h .ord{font-family:var(--f-mono);font-size:12px;color:var(--c);font-weight:500}
+.mod-h h3{font-size:17px}
+.mod-h .files{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);margin-left:auto}
+.mod-b{padding:12px 16px;display:grid;gap:10px}
+.mod-b>p{font-size:13.5px;color:var(--ink-2);max-width:95ch}
+.mod-b ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:13.5px;color:var(--ink-2)}
+.pill{font-family:var(--f-mono);font-size:10.5px;padding:1px 7px;border-radius:999px;border:1px dashed var(--c-api);color:var(--c-api);white-space:nowrap}
+.pill.hold{border-color:var(--ink-3);color:var(--ink-3)}
+.pill.bug{border-style:solid;border-color:var(--bad);color:var(--bad)}
+
+.ia{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:10px}
+.ia>div{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--c-ia);border-radius:10px;padding:11px 12px;display:grid;gap:4px;align-content:start;min-width:0}
+.ia .n{font-family:var(--f-mono);font-size:11px;color:var(--ink-3)}
+.ia b{font-size:14px;font-weight:600}
+.ia p{font-size:12.5px;color:var(--ink-2);line-height:1.45}
+.ia code{font-size:11px;color:var(--c-ia)}
+
+.recipe{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px;align-items:start}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:8px;counter-reset:r}
+.steps li{counter-increment:r;display:grid;grid-template-columns:28px 1fr;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;color:var(--ink-2)}
+.steps li::before{content:counter(r);width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--bg);display:grid;place-items:center;font-family:var(--f-mono);font-size:12px}
+.steps b{color:var(--ink);font-weight:600}
+.steps code{color:var(--c-api)}
+pre.codeb{margin:0;background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:14px 16px;overflow-x:auto;font-family:var(--f-mono);font-size:12.5px;line-height:1.6;min-width:0;border:1px solid var(--line)}
+pre.codeb .c{color:var(--code-dim)} pre.codeb .k{color:var(--code-key)} pre.codeb .s{color:var(--code-str)}
+.codehead{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);margin-bottom:-8px}
+.codewrap{display:grid;gap:12px;min-width:0}
+
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:10px}
+.rules>div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px;min-width:0}
+.rules b{font-size:14px;font-weight:600}
+.rules p{font-size:13px;color:var(--ink-2)}
+
+@media (max-width:640px){ .tree div{grid-template-columns:1fr;gap:0} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><b>DatHua</b> · dathua-api · Node.js · probado contra el sistema real el 20/10/2026</div>
+    <h1>Arquitectura API DatHua</h1>
+    <p class="lede">Cómo está armada la API central, qué hace cada archivo, por dónde pasa una petición, los 62 endpoints, los eventos en tiempo real y lo que falta construir. Si vas a programar en <code>dathua-api/</code>, empieza aquí. La base de datos tiene su propio <a id="link-mapa" href="https://claude.ai/artifact/V5FmP7UyiFsPuUHM844yhg">Mapa de datos DatHua</a>.</p>
+    <div class="stack" aria-label="Tecnologías">
+      <span><b>Node.js</b> ESM</span><span><b>Express</b> 5</span><span><b>mysql2</b> 3</span><span><b>mongoose</b> 9</span>
+      <span><b>socket.io</b> 4</span><span><b>jsonwebtoken</b> 9</span><span><b>bcrypt</b> 6</span><span><b>express-rate-limit</b> 7</span>
+      <span><b>node-cron</b> 4</span><span><b>pdfkit</b> 0.15</span><span><b>axios</b> 1</span><span>puerto <b>3000</b></span><span>prefijo <b>/api</b></span>
+    </div>
+  </header>
+
+  <nav class="nav" aria-label="Secciones">
+    <a href="#enfoque">Dónde enfocarte</a><a href="#sistema">Sistema</a><a href="#peticion">Una petición</a><a href="#carpetas">Carpetas</a>
+    <a href="#credenciales">Credenciales</a><a href="#endpoints">Endpoints</a><a href="#tiempo-real">Tiempo real</a><a href="#ia">Motor de IA</a>
+    <a href="#ruta">Por construir</a><a href="#receta">Nuevo endpoint</a><a href="#reglas">Reglas</a><a href="#errores">Errores</a><a href="#entorno">Entorno y pruebas</a>
+  </nav>
+
+  <section id="enfoque">
+    <div class="sec-head">
+      <h2>Dónde enfocarte</h2>
+      <p>Todas las pantallas del dashboard existen y la API está completa para ellas. Lo que sigue es cerrar el descubrimiento de equipos administrados y corregir el exceso de alertas del motor de IA antes de tener clientes reales.</p>
+    </div>
+    <div class="focus">
+      <div class="next c-api"><span class="who">Siguiente en la API</span><b>Frenar el exceso de incidentes</b><p>Un solo re-análisis llegó a crear unos 900 incidentes en la cuenta de pruebas. La prueba de este documento confirmó que el motor marca como LOW valores normales contra su patrón por hora fijo.</p><ul><li><code>services/aiService.js</code></li><li><code>dathua-ia/module4_seasonal.py</code></li><li><code>dathua-ia/module6_prioritizer.py</code></li></ul></div>
+      <div class="c-cliente"><span class="who">Si haces el frontend</span><b>Sugerencias SNMP en el formulario</b><p>La API ya manda <code>snmpSysDescr</code> y <code>suggestedParentNodeId</code> en los candidatos. Falta mostrarlos y preseleccionar el padre al aprobar.</p><ul><li><code>DiscoveryCandidatesList.vue</code></li><li>Página dedicada de descubrimiento</li></ul></div>
+      <div class="c-datos"><span class="who">Si tocas la base</span><b>Migración nueva, nunca editar</b><p>Cada cambio va en un archivo nuevo de <code>dathua-api/migrations/</code> y también en <code>dathua_schema_final.sql</code>.</p><ul><li>Hoy al script final le falta la migración 010.</li><li>Prueba con datos reales y limpia MySQL y Mongo al terminar.</li></ul></div>
+    </div>
+  </section>
+
+  <section id="sistema">
+    <div class="sec-head">
+      <h2>El sistema completo</h2>
+      <p>Cuatro capas y seis repositorios. Las cajas punteadas todavía no existen. Los números se explican debajo del dibujo.</p>
+    </div>
+    <div class="scroller"><div class="sys" id="sys"><svg id="sysLinks"></svg>
+      <div class="sys-col c-cliente"><span class="lbl">Clientes</span>
+        <div class="box c-cliente" id="n-web"><b>Dashboard</b><code>dathua-front/</code><p>Vue 3, Vite, Tailwind 4 y Pinia. Diez pantallas, una conexión de Socket.IO.</p></div>
+        <div class="box c-cliente" id="n-win"><b>Agente Windows</b><code>dathua-agent/</code><p>Servicio de Windows con asistente gráfico. Ping y descubrimiento por ARP.</p></div>
+        <div class="box c-cliente" id="n-lin"><b>Agente Linux</b><code>dathua-agent-linux/</code><p>CLI con servicio de usuario de systemd. Además identifica por SNMP y LLDP.</p></div>
+      </div>
+      <div class="sys-col c-api"><span class="lbl">API · dathua-api</span>
+        <div class="box c-api" id="n-app"><b>Express REST</b><code>server.js → app.js</code><p>13 routers bajo <code>/api</code>, CORS que expone Content-Disposition, JSON.</p></div>
+        <div class="box c-api" id="n-io"><b>Socket.IO</b><code>config/socket.js</code><p>Mismo servidor HTTP. Salas <code>site_{id}</code> y <code>user_{id}</code>.</p></div>
+        <div class="box c-api" id="n-job"><b>Tareas programadas</b><code>jobs/</code><p>IA cada 2 minutos. Limpieza de notificaciones a las 03:00.</p></div>
+      </div>
+      <div class="sys-col c-datos"><span class="lbl">Datos</span>
+        <div class="box c-datos" id="n-my"><b>MySQL</b><code>MariaDB local · base dathua</code><p>9 tablas: organizaciones, usuarios, sucursales, equipos, incidentes, avisos.</p></div>
+        <div class="box c-datos" id="n-mo"><b>MongoDB Atlas</b><code>node_metrics · ai_anomalies</code><p>Serie de tiempo de pings y hallazgos de la IA.</p></div>
+      </div>
+      <div class="sys-col c-ia"><span class="lbl">Servicios</span>
+        <div class="box c-ia" id="n-ia"><b>Motor de IA</b><code>dathua-ia/ · Flask :5000</code><p>Seis módulos en NumPy. Estado en memoria de un solo proceso.</p></div>
+        <div class="box c-ext todo" id="n-pay"><b>Pasarela de pago</b><code>Conekta · Mercado Pago · Clip</code><p>Sin elegir. Su webhook cambiará <code>subscriptionStatus</code>.</p></div>
+      </div>
+    </div></div>
+    <ol class="edges" id="edges"></ol>
+  </section>
+
+  <section id="peticion">
+    <div class="sec-head">
+      <h2>Recorrido de una petición</h2>
+      <p>Ejemplo: el dueño mueve un equipo bajo otro padre con <code>PUT /api/nodes/:nodeId</code>. Cada paso puede cortar la petición; el código que regresa está en rojo.</p>
+    </div>
+    <div class="pipe">
+      <div class="stage"><span class="n">1</span><b>Entra a Express</b><code>app.js</code><p>CORS abierto y lectura del JSON.</p><div class="no">400 JSON mal formado</div></div>
+      <div class="stage"><span class="n">2</span><b>Elige la ruta</b><code>routes/nodeRoutes.js</code><p>El router fija el orden de middleware. Las rutas <code>/bulk</code> van antes que <code>/:id</code>.</p><div class="no">404 de Express (HTML)</div></div>
+      <div class="stage"><span class="n">3</span><b>Verifica el token</b><code>verifyToken</code><p>Lee el Bearer y deja <code>req.user = { userId, orgId, email }</code>.</p><div class="no">401 sin token · 403 inválido</div></div>
+      <div class="stage"><span class="n">4</span><b>Revisa la suscripción</b><code>verifyToken</code><p>Si la prueba venció la marca expired y corta.</p><div class="no">402 TRIAL_EXPIRED</div></div>
+      <div class="stage"><span class="n">5</span><b>Valida los datos</b><code>updateNode</code><p>Tipo de equipo, IP y MAC. Validación a mano, sin librería de esquemas.</p><div class="no">400 + mensaje</div></div>
+      <div class="stage"><span class="n">6</span><b>Comprueba el dueño</b><code>JOIN sites … orgId = ?</code><p>El equipo debe ser de una sucursal de su organización.</p><div class="no">404 sin acceso</div></div>
+      <div class="stage"><span class="n">7</span><b>Reglas del negocio</b><code>cadena de padres</code><p>Sin ciclos; zona y padre de la misma sucursal.</p><div class="no">400 formaría un ciclo</div></div>
+      <div class="stage"><span class="n">8</span><b>Responde</b><code>res.json({ message })</code><p>Mensajes en español. Algunos errores llevan <code>code</code>.</p><div class="no">500 + error.message</div></div>
+    </div>
+    <h3 class="sub">El mismo recorrido para el agente</h3>
+    <div class="pipe">
+      <div class="stage"><span class="n">1</span><b>Límite por llave</b><code>telemetryLimiter</code><p>10 reportes por minuto por Site API Key.</p><div class="no">429</div></div>
+      <div class="stage"><span class="n">2</span><b>Verifica la llave</b><code>verifySiteApiKey</code><p>Header <code>x-site-key</code>. Deja <code>req.site</code> con siteId y orgId.</p><div class="no">401 sin header · 403 inválida</div></div>
+      <div class="stage"><span class="n">3</span><b>Filtra equipos</b><code>ingestTelemetry</code><p>Descarta los <code>node_id</code> que no son de esa sucursal y los cuenta.</p><div class="no">403 si ninguno es suyo</div></div>
+      <div class="stage"><span class="n">4</span><b>Guarda y emite</b><code>insertMany · UPDATE nodes</code><p>Mongo, MySQL y <code>telemetry:new</code>.</p><div class="no">201 insertedCount · rejectedCount</div></div>
+    </div>
+    <p class="note">La suscripción vencida no corta al agente a propósito: el cliente no pierde su historial mientras decide pagar.</p>
+  </section>
+
+  <section id="carpetas">
+    <div class="sec-head">
+      <h2>Carpetas y archivos</h2>
+      <p>La API sigue rutas, controladores y servicios. No hay capa de modelos para MySQL: los controladores escriben SQL directo con el pool de mysql2.</p>
+    </div>
+    <div class="cols2">
+      <div class="tree" aria-label="Árbol de dathua-api/src">
+        <div><span class="d">dathua-api/src/</span><span class="x"></span></div>
+        <div><span class="f">├─ server.js</span><span class="x">Conecta MySQL y Mongo, monta Socket.IO, arranca los cron</span></div>
+        <div><span class="f">├─ app.js</span><span class="x">Express: CORS, JSON, 13 routers y /api/health</span></div>
+        <div><span class="d">├─ config/</span><span class="x"></span></div>
+        <div><span class="f">│  ├─ mysql.js · mongo.js</span><span class="x">Pool de mysql2 y conexión de mongoose</span></div>
+        <div><span class="f">│  ├─ socket.js</span><span class="x">Handshake con JWT, salas y funciones emit*</span></div>
+        <div><span class="f">│  └─ plans.js</span><span class="x">Límites y precios de Básico y Pro</span></div>
+        <div><span class="d">├─ routes/</span><span class="x">13 archivos. URL y orden de middleware</span></div>
+        <div><span class="d">├─ controllers/</span><span class="x">13 archivos, una función por endpoint</span></div>
+        <div><span class="f">│  ├─ metricsController.js</span><span class="x">Agregados de Mongo por ventana 15m, 1h y 24h</span></div>
+        <div><span class="f">│  └─ reportController.js</span><span class="x">Auditoría en JSON, CSV y PDF con pdfkit</span></div>
+        <div><span class="d">├─ middleware/</span><span class="x"></span></div>
+        <div><span class="f">│  ├─ authMiddleware.js</span><span class="x">verifyToken: JWT y estado de suscripción</span></div>
+        <div><span class="f">│  ├─ agentAuthMiddleware.js</span><span class="x">verifySiteApiKey</span></div>
+        <div><span class="f">│  └─ rateLimiters.js</span><span class="x">login, registro, telemetría, descubrimiento</span></div>
+        <div><span class="d">├─ models/</span><span class="x">Solo Mongo: IcmpMetric, AiAnomaly</span></div>
+        <div><span class="d">├─ services/</span><span class="x"></span></div>
+        <div><span class="f">│  ├─ aiService.js</span><span class="x">Mongo → motor de IA → anomalías → incidentes</span></div>
+        <div><span class="f">│  ├─ notificationService.js</span><span class="x">notifyIncident según preferencias</span></div>
+        <div><span class="f">│  ├─ incidentCopy.js</span><span class="x">Métrica a título y mensaje en español simple</span></div>
+        <div><span class="f">│  └─ deviceClassifier.js</span><span class="x">Tipo y marca por SNMP, MAC y puertos</span></div>
+        <div><span class="d">└─ jobs/</span><span class="x"></span></div>
+        <div><span class="f">   ├─ aiScheduler.js</span><span class="x">Cada 2 min, con cursor lastAnalyzedAt en memoria</span></div>
+        <div><span class="f">   └─ notificationCleanupJob.js</span><span class="x">Diario 03:00, retención por usuario</span></div>
+      </div>
+      <div class="tree" aria-label="Resto del repositorio">
+        <div><span class="d">DatHua - FullStack/</span><span class="x"></span></div>
+        <div><span class="f">├─ dathua_schema_final.sql</span><span class="x">Crea la base desde cero</span></div>
+        <div><span class="f">├─ dathua-api/migrations/</span><span class="x">002 a 010, todas aplicadas</span></div>
+        <div><span class="d">├─ dathua-ia/</span><span class="x">pipeline_analyzer.py y module1 a module6</span></div>
+        <div><span class="d">├─ dathua-agent/agent/</span><span class="x">Windows: winservice, gui_configurator, elevate</span></div>
+        <div><span class="d">├─ dathua-agent-linux/agent_linux/</span><span class="x">setup_wizard, service (systemd), snmp_discovery</span></div>
+        <div><span class="f">│  └─ api_client · ping_engine · discovery · monitor_service</span><span class="x">Compartidos casi igual con el de Windows</span></div>
+        <div><span class="d">├─ dathua-front/src/</span><span class="x">views/dashboard (10), components, stores (auth, dashboard, notifications)</span></div>
+        <div><span class="f">│  ├─ services/api.js</span><span class="x">Toda llamada HTTP. VITE_API_URL</span></div>
+        <div><span class="f">│  └─ services/socket.js</span><span class="x">Se vuelve a unir a su sala al reconectar</span></div>
+        <div><span class="d">├─ dathua-landing/</span><span class="x">Landing pública del concurso</span></div>
+        <div><span class="d">└─ docs/</span><span class="x">Esta página y el Mapa de datos</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="credenciales">
+    <div class="sec-head">
+      <h2>Las dos credenciales</h2>
+      <p>Cada endpoint acepta una de dos credenciales. Elegir la correcta es la decisión de seguridad más importante de un endpoint nuevo, porque de ella sale el filtro de organización.</p>
+    </div>
+    <div class="clients">
+      <div class="client c-cliente"><code class="big">Authorization: Bearer &lt;JWT&gt;</code><span class="k">Personas en el dashboard</span><p>Lo firma el login o el registro con <code>JWT_SECRET</code>, dura 24 horas y lleva <code>userId</code>, <code>orgId</code> y <code>email</code>.</p><ul><li>Toda consulta usa <code>req.user.orgId</code>, nunca un orgId del cuerpo</li><li>Revisa la suscripción en cada petición</li></ul></div>
+      <div class="client c-api"><code class="big">x-site-key: dth_site_…</code><span class="k">El agente de una sucursal</span><p>Una llave por sucursal, generada al crearla. Identifica a la sucursal, no a una persona.</p><ul><li>Solo tres rutas: lista de equipos, telemetría y candidatos</li><li>La sucursal sale de la llave, nunca del payload</li></ul></div>
+      <div class="client" style="--c:var(--bad)"><code class="big">socket.handshake.auth.token</code><span class="k">Tiempo real</span><p>El mismo JWT, enviado al abrir el socket. Sin token no hay conexión.</p><ul><li>Entra solo a la sala de su usuario</li><li><code>join:site</code> revisa que la sucursal sea suya</li></ul><p class="warn">Nunca uses <code>io.emit()</code>: manda datos a todas las organizaciones conectadas.</p></div>
+    </div>
+  </section>
+
+  <section id="endpoints">
+    <div class="sec-head">
+      <h2>Endpoints construidos</h2>
+      <p>La cadena es el orden exacto de middleware que define cada router. Todos responden JSON salvo el reporte en CSV o PDF.</p>
+    </div>
+    <div class="toolbar" role="group" aria-label="Filtrar por módulo" id="filtro"></div>
+    <div class="tablebox">
+      <table>
+        <thead><tr><th>Método</th><th>Ruta</th><th>Cadena de middleware</th><th>Controlador</th><th>Qué hace</th></tr></thead>
+        <tbody id="ep"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="tiempo-real">
+    <div class="sec-head">
+      <h2>Tiempo real y tareas programadas</h2>
+      <p>Seis eventos de Socket.IO, todos dirigidos a una sala. El dashboard se une a la sala de la sucursal activa y siempre está en la de su usuario.</p>
+    </div>
+    <div class="tablebox"><table>
+      <thead><tr><th>Evento</th><th>Sala</th><th>Lo emite</th><th>Lo usa el dashboard para</th></tr></thead>
+      <tbody>
+        <tr><td class="code">telemetry:new</td><td class="code">site_{id}</td><td>POST /telemetry/report</td><td>Estado y latencia de los equipos en vivo</td></tr>
+        <tr><td class="code">anomaly:new</td><td class="code">site_{id}</td><td>aiService.saveAnomalies</td><td>Refrescar IA Sentinel</td></tr>
+        <tr><td class="code">incident:new</td><td class="code">site_{id}</td><td>IA o incidente manual</td><td>Refrescar Centro de Incidentes y el Resumen</td></tr>
+        <tr><td class="code">notification:new</td><td class="code">user_{id}</td><td>notifyIncident</td><td>Campanita y contador de no leídas</td></tr>
+        <tr><td class="code">discovery:new</td><td class="code">site_{id}</td><td>POST /discovery/candidates</td><td>Lista de equipos descubiertos y fin de la animación de Re-escanear</td></tr>
+        <tr><td class="code">join:site · leave:site</td><td class="code">cliente → API</td><td>El dashboard</td><td>Cambiar de sucursal activa</td></tr>
+      </tbody>
+    </table></div>
+    <div class="tablebox"><table>
+      <thead><tr><th>Tarea</th><th>Frecuencia</th><th>Qué hace</th></tr></thead>
+      <tbody>
+        <tr><td class="code">aiScheduler.js</td><td class="http">*/2 * * * *</td><td>Pide a Mongo las mediciones nuevas desde la última corrida exitosa (2 horas la primera vez), las manda al motor de IA y guarda lo que encuentre. Si el motor no responde, la siguiente corrida reintenta la misma ventana.</td></tr>
+        <tr><td class="code">notificationCleanupJob.js</td><td class="http">0 3 * * *</td><td>Borra notificaciones más viejas que el <code>retentionDays</code> de cada usuario.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Pendiente menor: resolver o eliminar un incidente no emite evento. Otro usuario de la misma organización no lo ve hasta recargar.</p>
+  </section>
+
+  <section id="ia">
+    <div class="sec-head">
+      <h2>Motor de IA</h2>
+      <p>Servicio Flask aparte en el puerto 5000. La API le manda hasta 2,000 mediciones en orden cronológico y recibe anomalías ya clasificadas en CRITICAL, HIGH, MEDIUM o LOW.</p>
+    </div>
+    <div class="ia">
+      <div><span class="n">module1</span><b>Preprocesa</b><p>Ventana de 60 puntos por equipo y métrica. Descarta 100% de pérdida y mediciones erráticas.</p><code>preprocesar()</code></div>
+      <div><span class="n">module2</span><b>EWMA y percentiles</b><p>EWMA con alfa 0.3 y límite de 3 desviaciones. Picos sobre el percentil 99.</p><code>detectar_ewma()</code></div>
+      <div><span class="n">module3</span><b>CUSUM</b><p>Cambios graduales en la pérdida contra el promedio propio del equipo. K 0.5, H 5.0.</p><code>detectar_cusum()</code></div>
+      <div><span class="n">module4</span><b>Estacional</b><p>Ajusta por hora del día con un patrón de latencia y pérdida fijo.</p><code>analizar_estacional()</code></div>
+      <div><span class="n">module5</span><b>Agrupa</b><p>Junta alertas del mismo equipo y calcula correlación y persistencia.</p><code>agrupar_alertas()</code></div>
+      <div><span class="n">module6</span><b>Prioriza</b><p>Score ≥ 0.85 con persistencia 3 o equipo crítico: CRÍTICA. ≥ 0.70 con persistencia 2: ALTA.</p><code>priorizar()</code></div>
+    </div>
+    <div class="tablebox"><table>
+      <thead><tr><th>Método</th><th>Ruta en :5000</th><th>Qué hace</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m POST">POST</span></td><td class="path">/api/analyze</td><td>Recibe <code>{ metrics: [...] }</code> y regresa <code>anomalies</code>, <code>summary</code> y <code>filtered_metrics</code></td></tr>
+        <tr><td><span class="m GET">GET</span></td><td class="path">/api/health</td><td>Estado del servicio</td></tr>
+        <tr><td><span class="m GET">GET</span></td><td class="path">/api/stats</td><td>Contadores desde el arranque y calentamiento por equipo</td></tr>
+        <tr><td><span class="m POST">POST</span></td><td class="path">/api/reset</td><td>Vacía los cachés en memoria</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Prueba del 20/10/2026 con 60 mediciones sintéticas: 40 normales entre 15 y 18 ms y 20 con 260 ms y 30% de pérdida. El motor regresó 33 anomalías: 20 críticas, 3 altas, 1 media y 9 bajas. Las 9 bajas cayeron sobre valores normales, comparados contra el patrón por hora fijo.</p>
+  </section>
+
+  <section id="ruta">
+    <div class="sec-head">
+      <h2>Por construir</h2>
+      <p>Lo pendiente, en el orden sugerido. Los dos primeros afectan la confianza del cliente en las alertas; el resto amplía el producto.</p>
+    </div>
+    <div class="road" id="road"></div>
+  </section>
+
+  <section id="receta">
+    <div class="sec-head">
+      <h2>Cómo agregar un endpoint</h2>
+      <p>Ejemplo real de la lista de pendientes: avisar en tiempo real cuando alguien resuelve un incidente.</p>
+    </div>
+    <div class="recipe">
+      <ol class="steps">
+        <li><span><b>Emisor</b> en <code>config/socket.js</code>: una función <code>emit*</code> que siempre usa <code>io.to(sala)</code>.</span></li>
+        <li><span><b>Controlador</b> en <code>controllers/incidentController.js</code>. Filtra por <code>req.user.orgId</code> en la misma consulta que modifica.</span></li>
+        <li><span><b>Ruta</b> en <code>routes/incidentRoutes.js</code>. Si es una ruta fija como <code>/bulk</code>, regístrala antes de <code>/:id</code>.</span></li>
+        <li><span><b>Montar el router</b> en <code>app.js</code> solo si es un módulo nuevo.</span></li>
+        <li><span><b>Frontend</b>: la función en <code>services/api.js</code> y el listener en la vista o el store.</span></li>
+        <li><span><b>Prueba real</b>: cuenta desechable, HTTP contra la API corriendo y Playwright en el navegador. Prueba también con un token de otra organización.</span></li>
+        <li><span><b>Limpia</b> los datos de prueba de MySQL y Mongo y anota el cambio en <code>CLAUDE.md</code>.</span></li>
+      </ol>
+      <div class="codewrap">
+        <div class="codehead">config/socket.js</div>
+<pre class="codeb"><span class="k">export const</span> emitIncidentResolved = (siteId, incidentId) =&gt; {
+  <span class="k">if</span> (!io) <span class="k">return</span>;
+  io.to(<span class="s">`site_${siteId}`</span>).emit(<span class="s">'incident:resolved'</span>, { incidentId });
+};</pre>
+        <div class="codehead">controllers/incidentController.js</div>
+<pre class="codeb"><span class="c">// PATCH /api/incidents/:id/resolve</span>
+<span class="k">export const</span> resolveIncident = <span class="k">async</span> (req, res) =&gt; {
+  <span class="k">const</span> { orgId } = req.user;
+  <span class="k">const</span> [rows] = <span class="k">await</span> pool.query(
+    <span class="s">`SELECT i.siteId FROM incidents i
+     JOIN sites s ON s.siteId = i.siteId
+     WHERE i.incidentId = ? AND s.orgId = ? AND i.isResolved = FALSE`</span>,
+    [req.params.id, orgId]);
+  <span class="k">if</span> (!rows.length) <span class="k">return</span> res.status(<span class="s">404</span>)
+    .json({ message: <span class="s">'Incidente no encontrado, sin acceso, o ya estaba resuelto'</span> });
+  <span class="k">await</span> pool.query(<span class="s">'UPDATE incidents SET isResolved = TRUE, resolvedAt = NOW() WHERE incidentId = ?'</span>,
+    [req.params.id]);
+  emitIncidentResolved(rows[<span class="s">0</span>].siteId, Number(req.params.id));
+  res.json({ message: <span class="s">'Incidente resuelto'</span> });
+};</pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="reglas">
+    <div class="sec-head">
+      <h2>Reglas que no se rompen</h2>
+      <p>Cada una salió de un error real que ya pasó en este proyecto.</p>
+    </div>
+    <div class="rules">
+      <div><b>Filtra por organización en la misma consulta</b><p>Un JOIN con sites y <code>orgId = ?</code>. Ya hubo fugas entre organizaciones en controladores y en sockets.</p></div>
+      <div><b>No confíes en ids del payload</b><p>Un <code>node_id</code>, <code>siteId</code> o <code>nodeId</code> que manda el cliente se verifica contra su dueño antes de usarlo.</p></div>
+      <div><b>Nada de io.emit()</b><p>Solo <code>io.to('site_…')</code> o <code>io.to('user_…')</code>.</p></div>
+      <div><b>Rutas fijas antes que /:id</b><p>Si no, Express interpreta <code>bulk</code> o <code>stats</code> como un id.</p></div>
+      <div><b>Límites con FOR UPDATE</b><p>Contar y crear en la misma transacción con la fila de la organización bloqueada.</p></div>
+      <div><b>Sin jerga en la interfaz</b><p>Nada de SNMP, EWMA, jitter o score para el dueño. Los textos van en español simple.</p></div>
+      <div><b>No cifrar SNMP ni integrar pagos sin pedirlo</b><p>Son decisiones pospuestas a propósito por el líder del proyecto.</p></div>
+      <div><b>Prueba con datos reales y limpia</b><p>HTTP y Playwright contra el sistema corriendo. Después, borra lo de prueba en MySQL y Mongo.</p></div>
+    </div>
+  </section>
+
+  <section id="errores">
+    <div class="sec-head">
+      <h2>Códigos de error y límites</h2>
+      <p>Todas las respuestas llevan <code>message</code> en español. Solo algunos casos agregan un <code>code</code> que el frontend reconoce.</p>
+    </div>
+    <div class="tablebox"><table>
+      <thead><tr><th>HTTP</th><th>code</th><th>Cuándo</th></tr></thead>
+      <tbody>
+        <tr><td class="http">400</td><td class="code">—</td><td>Faltan campos, tipo de equipo, ícono o severidad fuera de la lista, ciclo en la jerarquía, siteId ausente en una acción en bloque</td></tr>
+        <tr><td class="http">401</td><td class="code">—</td><td>Sin token, sin header <code>x-site-key</code>, credenciales de login inválidas, contraseña actual incorrecta</td></tr>
+        <tr><td class="http">402</td><td class="code">TRIAL_EXPIRED</td><td>Primera petición después de que venció la prueba</td></tr>
+        <tr><td class="http">402</td><td class="code">SUBSCRIPTION_INACTIVE</td><td>Suscripción expired o cancelled</td></tr>
+        <tr><td class="http">403</td><td class="code">SITE_LIMIT_REACHED</td><td>Crear una sucursal por encima del plan</td></tr>
+        <tr><td class="http">403</td><td class="code">—</td><td>Token inválido o vencido, Site API Key inválida, límite de zonas, telemetría sin ningún equipo propio</td></tr>
+        <tr><td class="http">404</td><td class="code">—</td><td>No existe o es de otra organización. Las dos cosas responden igual a propósito</td></tr>
+        <tr><td class="http">409</td><td class="code">—</td><td>Correo ya registrado en la organización</td></tr>
+        <tr><td class="http">429</td><td class="code">—</td><td>Rate limit</td></tr>
+        <tr><td class="http">500</td><td class="code">—</td><td>Error inesperado. Hoy incluye <code>error.message</code> en la respuesta</td></tr>
+      </tbody>
+    </table></div>
+    <div class="tablebox"><table>
+      <thead><tr><th>Limitador</th><th>Ruta</th><th>Ventana</th><th>Máximo</th><th>Por</th></tr></thead>
+      <tbody>
+        <tr><td class="code">loginLimiter</td><td class="code">/api/auth/login</td><td class="http">15 min</td><td class="http">10</td><td>IP</td></tr>
+        <tr><td class="code">registerLimiter</td><td class="code">/api/auth/register</td><td class="http">1 h</td><td class="http">20</td><td>IP</td></tr>
+        <tr><td class="code">telemetryLimiter</td><td class="code">/api/telemetry/report</td><td class="http">1 min</td><td class="http">10</td><td>Site API Key</td></tr>
+        <tr><td class="code">discoveryLimiter</td><td class="code">/api/discovery/candidates</td><td class="http">1 min</td><td class="http">5</td><td>Site API Key</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="entorno">
+    <div class="sec-head">
+      <h2>Entorno y pruebas</h2>
+      <p>Variables de <code>dathua-api/.env</code>. El archivo real no se sube y no existe un <code>.env.example</code>.</p>
+    </div>
+    <div class="tablebox"><table>
+      <thead><tr><th>Variable</th><th>Para qué</th></tr></thead>
+      <tbody>
+        <tr><td class="code">PORT</td><td>Puerto de la API, 3000</td></tr>
+        <tr><td class="code">DB_HOST · DB_PORT · DB_USER · DB_PASSWORD · DB_NAME</td><td>MySQL o MariaDB local, base <code>dathua</code>. Hay una configuración de Azure comentada</td></tr>
+        <tr><td class="code">MONGODB_URI</td><td>Clúster de MongoDB Atlas</td></tr>
+        <tr><td class="code">JWT_SECRET</td><td>Firma de los tokens de sesión y del handshake de Socket.IO</td></tr>
+        <tr><td class="code">TRIAL_DAYS</td><td>Días de prueba gratuita, 30</td></tr>
+        <tr><td class="code">PYTHON_API_URL</td><td>Motor de IA, por defecto <code>http://localhost:5000</code></td></tr>
+        <tr><td class="code">VITE_API_URL</td><td>En <code>dathua-front</code>. Por defecto <code>http://localhost:3000/api</code></td></tr>
+      </tbody>
+    </table></div>
+<pre class="codeb"><span class="c"># 1. Base de datos local</span>
+sudo systemctl start mariadb
+<span class="c"># 2. API (puerto 3000)</span>
+cd dathua-api &amp;&amp; npm install &amp;&amp; npm run dev
+<span class="c"># 3. Motor de IA (puerto 5000), necesario para el cron y "Forzar re-análisis"</span>
+cd dathua-ia &amp;&amp; ./.venv/bin/python pipeline_analyzer.py
+<span class="c"># 4. Dashboard (Vite)</span>
+cd dathua-front &amp;&amp; npm install &amp;&amp; npm run dev
+<span class="c"># 5. Agente Linux contra una sucursal real</span>
+cd dathua-agent-linux &amp;&amp; python -m agent_linux setup &amp;&amp; python -m agent_linux run</pre>
+    <p class="note">La API no tiene pruebas automáticas. Los dos agentes sí usan pytest: el de Linux tiene 29 pruebas, varias contra el sistema real sin root. La práctica del proyecto es probar cada cambio contra el sistema corriendo con cuentas desechables y limpiar después.</p>
+  </section>
+</div>
+
+<script>
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* Diagrama del sistema */
+const EDGES = [
+  ['n-web','n-app','HTTPS y JSON con Authorization: Bearer. Todas las pantallas.'],
+  ['n-web','n-io','WebSocket con el JWT en el handshake.'],
+  ['n-win','n-app','x-site-key: lista de equipos, telemetría y candidatos.'],
+  ['n-lin','n-app','Mismo protocolo, más los datos SNMP y LLDP de cada candidato.'],
+  ['n-app','n-my','Pool de mysql2. SQL escrito a mano en los controladores.'],
+  ['n-app','n-mo','mongoose: escribe node_metrics y lee agregados.'],
+  ['n-job','n-mo','Lee las mediciones nuevas y guarda ai_anomalies.'],
+  ['n-job','n-ia','POST /api/analyze con hasta 2,000 mediciones.'],
+  ['n-job','n-my','Incidentes, notificaciones y limpieza por retención.'],
+  ['n-pay','n-app','Webhook que cambiará subscriptionStatus (sin integrar).','dash']
+];
+const sys = document.getElementById('sys'), sysSvg = document.getElementById('sysLinks');
+document.getElementById('edges').innerHTML = EDGES.map(([a,b,t],i) => {
+  const na = document.querySelector('#'+a+' b').textContent, nb = document.querySelector('#'+b+' b').textContent;
+  return `<li><span class="n">${i+1}</span><span><b>${esc(na)} a ${esc(nb)}.</b> ${esc(t)}</span></li>`;
+}).join('');
+function drawSys(){
+  const cr = sys.getBoundingClientRect();
+  sysSvg.setAttribute('width', sys.scrollWidth); sysSvg.setAttribute('height', sys.scrollHeight);
+  const out = ['<defs><marker id="sA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--line-strong);stroke:none"/></marker></defs>'];
+  const used = {};
+  const off = n => Math.min(12*(n-1), 24);
+  EDGES.forEach(([a,b,,cls],i) => {
+    const A = document.getElementById(a).getBoundingClientRect(), B = document.getElementById(b).getBoundingClientRect();
+    let sx, sy, tx, ty, d;
+    if (B.left > A.right + 4) {
+      used[a+'out'] = (used[a+'out']||0)+1; used[b+'in'] = (used[b+'in']||0)+1;
+      sx = A.right - cr.left; tx = B.left - cr.left - 2;
+      sy = A.top - cr.top + 22 + off(used[a+'out']); ty = B.top - cr.top + 22 + off(used[b+'in']);
+      const span = tx - sx;
+      if (span > 200) {
+        const top = Math.min(sy, ty) - 26 - (i % 2) * 10;
+        d = `M${sx} ${sy} C${sx+40} ${sy} ${sx+40} ${top} ${sx+80} ${top} L${tx-80} ${top} C${tx-40} ${top} ${tx-40} ${ty} ${tx} ${ty}`;
+      } else {
+        const dx = span/2;
+        d = `M${sx} ${sy} C${sx+dx} ${sy} ${tx-dx} ${ty} ${tx} ${ty}`;
+      }
+    } else if (B.right < A.left - 4) {
+      sx = A.left - cr.left; tx = B.right - cr.left + 2;
+      sy = A.top - cr.top + A.height/2; ty = B.bottom - cr.top - 16;
+      const top = Math.max(sy, ty) + 30;
+      d = `M${sx} ${sy} C${sx-40} ${sy} ${sx-40} ${top} ${sx-80} ${top} L${tx+80} ${top} C${tx+40} ${top} ${tx+40} ${ty} ${tx} ${ty}`;
+    } else {
+      sx = A.left - cr.left + A.width/2; sy = A.bottom - cr.top; tx = B.left - cr.left + B.width/2; ty = B.top - cr.top - 2;
+      d = `M${sx} ${sy} L${tx} ${ty}`;
+    }
+    const p = document.createElementNS('http://www.w3.org/2000/svg','path'); p.setAttribute('d', d);
+    sysSvg.appendChild(p);
+    const L = p.getTotalLength(), m = p.getPointAtLength(L*0.5); p.remove();
+    out.push(`<path d="${d}" class="${cls||''}" marker-end="url(#sA)"/><circle cx="${m.x}" cy="${m.y}" r="9"/><text x="${m.x}" y="${m.y+3.5}" text-anchor="middle">${i+1}</text>`);
+  });
+  sysSvg.innerHTML = out.join('');
+}
+
+/* Endpoints */
+const MODS = [['todos','Todos'],['auth','Sesión y cuenta'],['sitios','Sucursales y zonas'],['nodos','Equipos'],['agente','Agente'],['desc','Descubrimiento'],['inc','Incidentes'],['ia','IA'],['met','Métricas y reportes'],['not','Notificaciones']];
+const J = 'verifyToken|jwt', LIM = n => n+'|lim', K = 'verifySiteApiKey|key';
+const EP = [
+  ['auth','POST','/api/auth/register',[LIM('registerLimiter')],'register','Crea la organización en plan Básico con 30 días de prueba y su primer usuario. Regresa JWT'],
+  ['auth','POST','/api/auth/login',[LIM('loginLimiter')],'login','Prueba la contraseña contra cada cuenta con ese correo. JWT de 24 horas'],
+  ['auth','GET','/api/health',['público|none'],'(app.js)','Confirma que la API está arriba'],
+  ['auth','GET','/api/users/me',[J],'getMe','Perfil, nombre de la organización y plan'],
+  ['auth','PUT','/api/users/me',[J],'updateMe','Cambia nombre y correo. 409 si el correo ya está en la organización'],
+  ['auth','PATCH','/api/users/me/password',[J],'changePassword','Pide la contraseña actual. La nueva, de 8 caracteres o más'],
+  ['auth','GET','/api/organizations/usage',[J],'getUsage','Plan, días de prueba, sucursales y nodos contra el límite, cargo estimado por nodos extra'],
+  ['sitios','GET','/api/sites',[J],'getSites','Sucursales de la organización'],
+  ['sitios','GET','/api/sites/:siteId',[J],'getSiteById','Una sucursal'],
+  ['sitios','GET','/api/sites/:siteId/apikey',[J],'getSiteApiKey','Site API Key para instalar el agente'],
+  ['sitios','POST','/api/sites',[J],'createSite','Crea la sucursal con FOR UPDATE y genera su llave. 403 SITE_LIMIT_REACHED'],
+  ['sitios','PUT','/api/sites/:siteId',[J],'updateSite','Nombre, dirección, zona horaria, estado y descripción'],
+  ['sitios','DELETE','/api/sites/:siteId',[J],'deleteSite','Borra la sucursal y en cascada zonas, equipos, candidatos e incidentes'],
+  ['sitios','PATCH','/api/sites/:siteId/maintenance',[J],'setSiteMaintenance','Silencia toda la sucursal. Con minutes por tiempo, sin él indefinido'],
+  ['sitios','DELETE','/api/sites/:siteId/maintenance',[J],'clearSiteMaintenance','Quita el silencio'],
+  ['sitios','POST','/api/sites/:siteId/rescan',[J],'requestSiteRescan','Marca rescanRequestedAt para que el agente escanee ya'],
+  ['sitios','GET','/api/zones/site/:siteId',[J],'getZonesBySite','Zonas de una sucursal'],
+  ['sitios','POST','/api/zones/site/:siteId',[J],'createZone','Crea una zona. Máximo 3 por organización'],
+  ['sitios','GET','/api/zones/:zoneId',[J],'getZoneById','Una zona'],
+  ['sitios','PUT','/api/zones/:zoneId',[J],'updateZone','Nombre, descripción e ícono'],
+  ['sitios','DELETE','/api/zones/:zoneId',[J],'deleteZone','Borra la zona. Con ?deleteNodes=true también sus equipos'],
+  ['nodos','GET','/api/nodes/site/:siteId',[J],'getNodesBySite','Equipos de la sucursal. Filtros zoneId, status y deviceType'],
+  ['nodos','GET','/api/nodes/:nodeId',[J],'getNodeById','Un equipo con su sucursal y zona'],
+  ['nodos','POST','/api/nodes',[J],'createNode','Alta de equipo. Valida tipo, zona y padre de la misma sucursal'],
+  ['nodos','PUT','/api/nodes/:nodeId',[J],'updateNode','Edición. Rechaza jerarquías con ciclos'],
+  ['nodos','DELETE','/api/nodes/:nodeId',[J],'deleteNode','Borra el equipo. Sus incidentes se conservan sin nodo'],
+  ['nodos','PATCH','/api/nodes/:nodeId/maintenance',[J],'setNodeMaintenance','Silencia un equipo'],
+  ['nodos','DELETE','/api/nodes/:nodeId/maintenance',[J],'clearNodeMaintenance','Quita el silencio'],
+  ['agente','GET','/api/nodes/worker/active',['verifyAuthOrApiKey|key'],'getActiveMonitoredNodes','Equipos a monitorear de la sucursal y la marca de Re-escanear'],
+  ['agente','POST','/api/telemetry/report',[LIM('telemetryLimiter'),K],'ingestTelemetry','Guarda mediciones en Mongo, actualiza nodes y emite telemetry:new'],
+  ['agente','POST','/api/discovery/candidates',[LIM('discoveryLimiter'),K],'submitCandidates','Guarda o actualiza candidatos. Acepta lista vacía y sessionStart'],
+  ['desc','GET','/api/discovery/sites/:siteId/candidates',[J],'listCandidates','Candidatos por status, con padre sugerido por LLDP'],
+  ['desc','POST','/api/discovery/candidates/:candidateId/approve',[J],'approveCandidate','Crea el nodo con nombre, tipo, zona y padre'],
+  ['desc','POST','/api/discovery/candidates/:candidateId/reject',[J],'rejectCandidate','Oculta el candidato'],
+  ['inc','GET','/api/incidents/stats/summary',[J],'getIncidentStats','Totales: activos, resueltos, críticos o altos activos'],
+  ['inc','GET','/api/incidents',[J],'getIncidents','Lista con filtros siteId, nodeId, isResolved y severity. 50 por página'],
+  ['inc','PATCH','/api/incidents/bulk-resolve',[J],'bulkResolveIncidents','Resuelve todo lo filtrado. Exige siteId'],
+  ['inc','DELETE','/api/incidents/bulk',[J],'bulkDeleteIncidents','Borra todo lo filtrado. Exige siteId'],
+  ['inc','GET','/api/incidents/:id',[J],'getIncidentById','Un incidente'],
+  ['inc','POST','/api/incidents',[J],'createIncident','Incidente manual. Valida severidad y que el equipo sea de la sucursal'],
+  ['inc','PATCH','/api/incidents/:id/resolve',[J],'resolveIncident','Marca resuelto con resolvedAt'],
+  ['inc','DELETE','/api/incidents/:id',[J],'deleteIncident','Borrado real'],
+  ['ia','POST','/api/ai/trigger-analysis',[J],'triggerAnalysis','Forzar re-análisis de la organización. Por defecto 24 horas'],
+  ['ia','GET','/api/ai/anomalies',[J],'getAnomalies','Lista con filtros siteId, nodeId, classification, reviewed y minScore'],
+  ['ia','GET','/api/ai/stats',[J],'getAnomalyStats','Totales para las tarjetas, con el mismo minScore que la lista'],
+  ['ia','PATCH','/api/ai/anomalies/bulk-review',[J],'bulkReviewAnomalies','Marca como revisado todo lo filtrado. Exige siteId'],
+  ['ia','DELETE','/api/ai/anomalies/bulk',[J],'bulkDeleteAnomalies','Borra todo lo filtrado. Exige siteId'],
+  ['ia','PATCH','/api/ai/anomalies/:id/review',[J],'reviewAnomaly','Es real o falso positivo'],
+  ['ia','DELETE','/api/ai/anomalies/:id',[J],'deleteAnomaly','Borra una anomalía'],
+  ['met','GET','/api/metrics/org',[J],'getOrgMetrics','KPIs de toda la organización. window 15m, 1h o 24h'],
+  ['met','GET','/api/metrics/org/timeseries',[J],'getOrgMetricsTimeseries','Tendencia agregada de la organización'],
+  ['met','GET','/api/metrics/site/:siteId',[J],'getSiteMetrics','Salud por zona y por equipo. Filtros zoneId y nodeId'],
+  ['met','GET','/api/metrics/site/:siteId/timeseries',[J],'getSiteMetricsTimeseries','Puntos para las gráficas: 1, 5 o 60 min por cubeta'],
+  ['met','GET','/api/reports/site/:siteId/audit',[J],'getSiteAuditReport','Auditoría en JSON, CSV o PDF. from y to, por defecto 30 días'],
+  ['not','GET','/api/notifications',[J],'getNotifications','Historial. Filtro unread, 20 por página'],
+  ['not','GET','/api/notifications/unread-count',[J],'getUnreadCount','Número de la campanita'],
+  ['not','PATCH','/api/notifications/:id/read',[J],'markAsRead','Marca una como leída'],
+  ['not','PATCH','/api/notifications/read-all',[J],'markAllAsRead','Marca todas como leídas'],
+  ['not','DELETE','/api/notifications/:id',[J],'deleteNotification','Borra una'],
+  ['not','DELETE','/api/notifications',[J],'deleteAllNotifications','Borra todas, o solo leídas con ?onlyRead=true'],
+  ['not','GET','/api/notifications/preferences',[J],'getPreferences','Severidades que avisan y retención'],
+  ['not','PUT','/api/notifications/preferences',[J],'updatePreferences','Guarda severidades y retención de 7, 30 o nunca']
+];
+const filtro = document.getElementById('filtro'), epBody = document.getElementById('ep');
+filtro.innerHTML = MODS.map(([k,l]) => `<button type="button" id="f-${k}" data-f="${k}" aria-pressed="${k==='todos'}">${esc(l)}</button>`).join('') + `<span class="count" id="epCount"></span>`;
+function renderEp(f){
+  const rows = EP.filter(e => f==='todos' || e[0]===f);
+  epBody.innerHTML = rows.map(([,m,p,chain,fn,d]) => `<tr><td><span class="m ${m}">${m}</span></td><td class="path">${esc(p)}</td><td><div class="chain">${chain.map(c => { const [n,cls] = c.split('|'); return `<span class="${cls||''}">${esc(n)}</span>`; }).join('')}</div></td><td class="fn">${esc(fn)}</td><td class="desc">${esc(d)}</td></tr>`).join('');
+  document.getElementById('epCount').textContent = `${rows.length} de ${EP.length}`;
+}
+function setFiltro(f){
+  filtro.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.f===f));
+  renderEp(f);
+  try { localStorage.setItem('dathua-ep', f); } catch(e) {}
+}
+filtro.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setFiltro(b.dataset.f); });
+let f0 = 'todos'; try { f0 = localStorage.getItem('dathua-ep') || 'todos'; } catch(e) {}
+if (!MODS.some(m => m[0]===f0)) f0 = 'todos';
+setFiltro(f0);
+
+/* Hoja de ruta */
+const ROAD = [
+  {c:'c-ia', ord:'1', t:'Frenar el exceso de alertas', files:'aiService.js · dathua-ia/', pill:['bug','error conocido'],
+   p:'Un re-análisis manual sobre la cuenta de pruebas generó unos 900 incidentes y notificaciones. El patrón estacional es fijo e igual para todos los equipos, así que valores normales salen como anomalías.',
+   items:['Limitar cuántos incidentes nuevos puede abrir una sola corrida','Que trigger-analysis use el mismo cursor que el cron','Baseline estacional aprendido por equipo en vez de la tabla fija','Mover el estado del motor a Mongo o Redis para que sobreviva reinicios']},
+  {c:'c-cliente', ord:'2', t:'Descubrimiento completo en el dashboard', files:'DiscoveryCandidatesList.vue', pill:['','pendiente'],
+   p:'La API ya clasifica por SNMP y sugiere el padre por LLDP. El formulario de aprobación todavía no lo muestra.',
+   items:['Mostrar snmpSysDescr y preseleccionar suggestedParentNodeId','Página dedicada para aprobar o rechazar todo lo descubierto','Capturar una community SNMP real por equipo']},
+  {c:'c-cliente', ord:'3', t:'Agente de Windows listo para clientes', files:'dathua-agent/agent/', pill:['','pendiente'],
+   p:'Hoy apunta fijo a localhost y no tiene la identificación SNMP del agente de Linux.',
+   items:['API_BASE_URL configurable desde el asistente','Avisar en la GUI si se revoca la Site API Key','Portar snmp_discovery.py']},
+  {c:'c-api', ord:'4', t:'Cobro recurrente', files:'organizationController.js', pill:['hold','pospuesto'],
+   p:'subscriptionStatus ya existe y verifyToken ya corta con 402. Falta el proveedor y su webhook.',
+   items:['Elegir entre Conekta, Mercado Pago Suscripciones y Clip','Ruta pública de webhook con firma verificada','Cobrar nodos extra con EXTRA_NODE_PRICE_MXN']},
+  {c:'c-datos', ord:'5', t:'Endurecimiento antes de producción', files:'app.js · config/socket.js', pill:['','recomendado'],
+   p:'Detalles encontrados al preparar esta documentación.',
+   items:['No devolver error.message en las respuestas 500','Restringir CORS y el origin de Socket.IO al dominio del dashboard','Agregar las columnas de la migración 010 a dathua_schema_final.sql','TTL o compactación para node_metrics y borrar icmp_metrics y node_telemetry','Emitir evento al resolver o eliminar incidentes','Cifrar credenciales SNMP, pendiente de priorizar']}
+];
+document.getElementById('road').innerHTML = ROAD.map(r => `<div class="mod ${r.c}"><div class="mod-h"><span class="ord">${esc(r.ord)}</span><h3>${esc(r.t)}</h3><span class="pill ${r.pill[0]}">${esc(r.pill[1])}</span><span class="files">${esc(r.files)}</span></div><div class="mod-b"><p>${esc(r.p)}</p><ul>${r.items.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>`).join('');
+
+drawSys();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawSys);
+if ('ResizeObserver' in window) new ResizeObserver(drawSys).observe(sys);
+window.addEventListener('resize', drawSys);
+</script>

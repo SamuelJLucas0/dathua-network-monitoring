@@ -1,0 +1,4 @@
+requests>=2.31
+customtkinter>=5.2
+pywin32; sys_platform == "win32"
+pysnmp>=7.1

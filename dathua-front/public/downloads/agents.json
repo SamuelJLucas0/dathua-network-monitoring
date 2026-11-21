@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-10-24T20:56:08+00:00",
+  "windows": {
+    "file": "DathuaAgent.exe",
+    "sizeBytes": 16122504,
+    "sha256": "92b2e1737dafe4d68506458bb14771622c43799db49262e541abf066d17b4a15",
+    "updatedAt": "2026-10-24T19:55:10+00:00"
+  },
+  "linux": {
+    "file": "dathua-agent-linux.tar.gz",
+    "sizeBytes": 19990,
+    "sha256": "b4c9f6440fd12b619faa659aae4f03c9a12716d3c5fb4567fe44bd2b1ca4e054",
+    "updatedAt": "2026-10-24T20:56:08+00:00"
+  }
+}

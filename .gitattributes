@@ -1,0 +1,11 @@
+# Archivos binarios: git nunca debe tocarles los saltos de línea. Sin esto,
+# los PDFs (que git confunde con texto) se dañaban al clonar en Windows con
+# core.autocrlf=true.
+*.pdf  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.ico  binary
+*.webp binary
+*.exe  binary
+*.gz   binary

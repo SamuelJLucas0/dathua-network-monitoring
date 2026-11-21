@@ -1,0 +1,20 @@
+# Referencia únicamente — `python -m agent_linux install` genera esta
+# misma unidad automáticamente (con rutas absolutas reales de tu checkout
+# y tu intérprete) en ~/.config/systemd/user/dathua-agent.service.
+# No copies este archivo a mano salvo que sepas lo que haces.
+
+[Unit]
+Description=DatHua Agent - monitoreo de red de la sucursal
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/ruta/a/tu/venv/bin/python -m agent_linux run
+WorkingDirectory=/ruta/a/dathua-agent-linux
+Environment=PYTHONPATH=/ruta/a/dathua-agent-linux
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=default.target

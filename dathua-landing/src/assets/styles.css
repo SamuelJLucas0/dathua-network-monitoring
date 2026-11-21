@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dathua-bg: #12161A;
+
+  --color-dathua-card: #1B2228;
+
+  --color-dathua-border: #2B3540;
+
+  --color-dathua-orange: #D96B14;
+
+  --color-dathua-orange-hover: #B45309;
+
+  --color-dathua-text-soft: #9CA3AF;
+
+  --font-sans: 'Inter', sans-serif;
+
+  --font-heading: 'Space Grotesk', sans-serif;
+}
+
+
+@layer base {
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-dathua-bg);
+  }
+
+}
+
+
+/* =========================
+   ANIMACIÓN DE FONDO
+========================= */
+
+@keyframes glow-float {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(-20px, 20px) scale(1.1);
+  }
+
+}
+
+
+.animate-glow {
+  animation: glow-float 8s ease-in-out infinite;
+}
+
+
+/* =========================
+   NODOS / PULSOS
+========================= */
+
+@keyframes pulse-node {
+
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+}
+
+
+.animate-pulse-node {
+  animation: pulse-node 2.5s ease-in-out infinite;
+}

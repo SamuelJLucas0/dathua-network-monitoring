@@ -1,0 +1,43 @@
+name: Build dathua-agent (Windows)
+
+# Este workflow requiere que el repo esté en GitHub — no corre hasta que
+# exista el remoto y se haga push. PyInstaller no cruza plataformas, y el
+# registro real como Servicio de Windows (pywin32) solo se puede compilar
+# y ejecutar en un runner de Windows como este.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "dathua-agent/**"
+  pull_request:
+    paths:
+      - "dathua-agent/**"
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: dathua-agent
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements-build.txt
+
+      - name: Correr pruebas
+        run: pytest
+
+      - name: Compilar .exe
+        run: pyinstaller --clean DathuaAgent.spec
+
+      - name: Publicar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DathuaAgent-windows
+          path: dathua-agent/dist/DathuaAgent.exe

@@ -1,0 +1,677 @@
+<title>Mapa de datos DatHua</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@600;700&display=swap">
+<style>
+/* Layout: plano técnico de columnas con la identidad del dashboard DatHua (oscuro primero, acento naranja). Cada módulo tiene su color; los diagramas viven en lienzos con scroll propio. */
+:root{
+  --bg:#0E1217; --surface:#161B22; --surface-2:#1B2228; --ink:#F3F4F6; --ink-2:#9CA3AF; --ink-3:#6B7280; --line:#2B3540; --line-strong:#556372;
+  --accent:#E8833A;
+  --m-org:#8E96F2; --m-infra:#3EC0BD; --m-disc:#D98BC4; --m-alert:#F07A80; --m-mongo:#5FC27D;
+  --ok:#5FC27D; --warn:#E8A23A; --bad:#F07A80;
+  --f-display:"Space Grotesk","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Inter","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+  --bg:#F3F4F6; --surface:#FFFFFF; --surface-2:#E9ECEF; --ink:#12161A; --ink-2:#4B5563; --ink-3:#6B7280; --line:#D3D9DF; --line-strong:#8C98A4;
+  --accent:#B45309;
+  --m-org:#4B53C4; --m-infra:#0D7F80; --m-disc:#A83A7E; --m-alert:#B8323A; --m-mongo:#2B7F44;
+  --ok:#2B7F44; --warn:#A35F0B; --bad:#B8323A; color-scheme:light }}
+:root[data-theme="light"]{
+  --bg:#F3F4F6; --surface:#FFFFFF; --surface-2:#E9ECEF; --ink:#12161A; --ink-2:#4B5563; --ink-3:#6B7280; --line:#D3D9DF; --line-strong:#8C98A4;
+  --accent:#B45309;
+  --m-org:#4B53C4; --m-infra:#0D7F80; --m-disc:#A83A7E; --m-alert:#B8323A; --m-mongo:#2B7F44;
+  --ok:#2B7F44; --warn:#A35F0B; --bad:#B8323A; color-scheme:light }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 72px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
+h2{font-size:24px;font-weight:700;letter-spacing:-.01em}
+h3{font-size:16px;font-weight:600}
+p{margin:0}
+a{color:var(--accent)}
+code,.mono{font-family:var(--f-mono);font-size:.88em}
+.lede{color:var(--ink-2);max-width:70ch;margin-top:10px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.eyebrow b{color:var(--accent);font-weight:500}
+.note{font-size:13px;color:var(--ink-3);max-width:90ch}
+
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);margin-inline:-16px;padding:10px 16px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:22px}
+.nav a{flex:none;color:var(--ink-2);text-decoration:none;font-size:13px;font-weight:500;padding:6px 12px;border-radius:999px;border:1px solid transparent}
+.nav a:hover,.nav a:focus-visible{border-color:var(--line);color:var(--ink);outline:none;background:var(--surface)}
+
+section{margin-top:52px;display:grid;gap:16px;scroll-margin-top:64px}
+.sec-head{display:grid;gap:6px}
+.sec-head p{color:var(--ink-2);max-width:76ch}
+
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:18px}
+.legend span{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
+.legend i{width:12px;height:12px;border-radius:3px;background:var(--c)}
+.m-org{--c:var(--m-org)} .m-infra{--c:var(--m-infra)} .m-disc{--c:var(--m-disc)} .m-alert{--c:var(--m-alert)} .m-mongo{--c:var(--m-mongo)}
+
+.idea{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px;margin-top:22px}
+.idea div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:4px;min-width:0}
+.idea b{font-family:var(--f-display);font-weight:600;font-size:15px}
+.idea p{color:var(--ink-2);font-size:14px}
+
+.scroller{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:radial-gradient(circle,var(--line) 1px,transparent 1.2px) 0 0/22px 22px,var(--surface-2)}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;font-size:13px;color:var(--ink-2)}
+.toolbar label{display:inline-flex;gap:8px;align-items:center;cursor:pointer}
+.toolbar input{accent-color:var(--accent);width:16px;height:16px}
+
+/* ER */
+.er{position:relative;display:grid;grid-template-columns:repeat(5,236px);column-gap:92px;padding:28px;width:max-content;align-items:start}
+.er-col{display:flex;flex-direction:column;gap:26px}
+.er-col>.lbl{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:-14px}
+.er svg.links{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+.tbl{position:relative;z-index:1;background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:pointer;transition:opacity .15s,box-shadow .15s,border-color .15s}
+.tbl:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tbl-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:8px 10px;background:color-mix(in srgb,var(--c) 16%,var(--surface));border-bottom:2px solid var(--c)}
+.tbl-name{font-family:var(--f-mono);font-weight:500;font-size:13px}
+.tbl-mod{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--c);font-weight:600}
+.tbl.doc{border-style:dashed}
+.cols{list-style:none;margin:0;padding:4px 0}
+.cols li{display:flex;align-items:center;gap:6px;padding:2px 10px;font-size:12px;min-height:21px}
+.cn{font-family:var(--f-mono);color:var(--ink)}
+.ct{color:var(--ink-3);font-size:11px;margin-left:auto;white-space:nowrap}
+.bd{font-family:var(--f-mono);font-size:9.5px;font-weight:500;padding:0 4px;border-radius:3px;line-height:15px;border:1px solid var(--line-strong);color:var(--ink-2)}
+.bd.pk{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.bd.u{border-style:dashed}
+.bd.l{border-style:dotted;color:var(--ink-3)}
+.cols li.fk .cn{color:var(--accent)}
+.er.sel .tbl{opacity:.3}
+.er.sel .tbl.on,.er.sel .tbl.rel{opacity:1}
+.er.sel .tbl.on{border-color:var(--c);box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 30%,transparent)}
+.links path{fill:none;stroke:var(--line-strong);stroke-width:1.4;opacity:.6;transition:opacity .15s}
+.links path.l{stroke-dasharray:4 4}
+.links path.on{stroke:var(--accent);stroke-width:2;opacity:1}
+.er.sel .links path:not(.on){opacity:.12}
+
+.detail{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;display:grid;gap:14px;border-top:3px solid var(--c)}
+.detail-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline}
+.detail-head h3{font-family:var(--f-mono);font-weight:500;font-size:19px}
+.detail-head .tag{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--c);font-weight:600}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px 26px}
+.detail-grid>div{min-width:0;display:grid;gap:6px;align-content:start}
+.detail .k{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.detail ul{margin:0;padding-left:18px;display:grid;gap:4px;color:var(--ink-2);font-size:14px}
+.detail p{color:var(--ink-2);font-size:14px;max-width:80ch}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--f-mono);font-size:12px;padding:2px 8px;border-radius:5px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);cursor:pointer}
+.chip:hover,.chip:focus-visible{border-color:var(--accent);outline:none}
+.chip.ep{cursor:default;color:var(--accent);background:transparent}
+.chip.st{cursor:default}
+
+/* colecciones */
+.docs2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:16px;align-items:start}
+.coll{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--m-mongo);border-radius:12px;padding:16px;display:grid;gap:12px;min-width:0}
+.coll-h{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline}
+.coll-h h3{font-family:var(--f-mono);font-weight:500;font-size:17px}
+.coll-h span{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--m-mongo);font-weight:600}
+.coll p{font-size:14px;color:var(--ink-2)}
+pre.json{margin:0;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;font-family:var(--f-mono);font-size:12px;line-height:1.6;color:var(--ink)}
+pre.json .k{color:var(--m-infra)} pre.json .c{color:var(--ink-3)} pre.json .s{color:var(--accent)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13px}
+.kv dt{color:var(--ink-3);font-weight:500}
+.kv dd{margin:0;color:var(--ink-2);min-width:0}
+
+/* swimlane */
+.lanes{position:relative;display:grid;grid-template-columns:150px repeat(10,184px);grid-template-rows:repeat(5,auto);column-gap:26px;width:max-content;padding:0 24px 0 0}
+.lane-label{grid-column:1;display:flex;align-items:center;padding:14px 16px;font-family:var(--f-display);font-weight:600;font-size:14px;border-right:1px solid var(--line);background:var(--surface);position:sticky;left:0;z-index:2;border-left:3px solid var(--c)}
+.lane-bg{grid-column:1/-1;border-top:1px solid var(--line)}
+.step{position:relative;z-index:1;margin:14px 0;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:10px 12px;display:grid;gap:6px;align-content:start;border-left:3px solid var(--c)}
+.step .n{font-family:var(--f-mono);font-size:11px;color:var(--ink-3)}
+.step b{font-family:var(--f-display);font-weight:600;font-size:14px;line-height:1.25}
+.step p{font-size:12.5px;color:var(--ink-2);line-height:1.45}
+.step .alt{font-size:12px;color:var(--bad);border-top:1px dashed var(--line);padding-top:6px}
+.step .chips .chip{font-size:11px;padding:1px 6px;cursor:default}
+.lanes svg{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+.lanes svg path{fill:none;stroke:var(--line-strong);stroke-width:1.5}
+
+/* tira de pasos */
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:12px}
+.strip>div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:5px;align-content:start;min-width:0}
+.strip .when{font-family:var(--f-mono);font-size:11.5px;color:var(--c,var(--ink-3))}
+.strip b{font-family:var(--f-display);font-weight:600;font-size:14px}
+.strip p{font-size:13px;color:var(--ink-2)}
+.strip .chips .chip{font-size:11px;padding:1px 6px;cursor:default}
+
+/* estados */
+.states{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px;min-width:0}
+.card p{font-size:13px;color:var(--ink-2)}
+.svg-scroll{overflow-x:auto}
+.svg-scroll svg{min-width:560px;width:100%;height:auto;display:block}
+.st rect{fill:var(--surface-2);stroke:var(--line-strong);stroke-width:1.2}
+.st rect.good{fill:color-mix(in srgb,var(--ok) 16%,var(--surface));stroke:var(--ok)}
+.st rect.bad{fill:color-mix(in srgb,var(--bad) 13%,var(--surface));stroke:var(--bad)}
+.st rect.start{stroke:var(--accent);stroke-width:2}
+.st rect.dash{stroke-dasharray:5 4}
+.st text{fill:var(--ink);font-family:var(--f-mono);font-size:13px}
+.st text.lbl{fill:var(--ink-2);font-family:var(--f-body);font-size:11.5px}
+.st path{fill:none;stroke:var(--line-strong);stroke-width:1.5}
+.st path.dash{stroke-dasharray:5 4}
+.st path.red{stroke:var(--bad)}
+.st .ah{fill:var(--line-strong)}
+.st .ah-red{fill:var(--bad)}
+
+/* tablas */
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{font-family:var(--f-display);font-weight:600;font-size:13px;background:var(--surface-2);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td:first-child{color:var(--ink);font-weight:500;min-width:180px}
+td{color:var(--ink-2)}
+td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+td.y{color:var(--ok);font-weight:600}
+td.w{color:var(--warn);font-weight:500}
+.pill{font-family:var(--f-mono);font-size:10.5px;padding:1px 7px;border-radius:999px;border:1px solid var(--line-strong);color:var(--ink-2);white-space:nowrap}
+.pill.ok{border-color:var(--ok);color:var(--ok)}
+.pill.warn{border-color:var(--warn);color:var(--warn)}
+
+@media (max-width:640px){
+  .lane-label{padding:10px;font-size:12.5px}
+  .lanes{grid-template-columns:104px repeat(10,176px)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><b>DatHua</b> · MySQL 9 tablas · MongoDB Atlas 2 colecciones · revisado contra la base viva el 20/10/2026</div>
+    <h1>Mapa de datos DatHua</h1>
+    <p class="lede">Dónde vive cada dato de la plataforma, cómo se relacionan las tablas de MySQL con las colecciones de MongoDB y qué reglas los protegen. Toca cualquier tabla del diagrama para ver sus relaciones, quién la escribe y qué endpoints la usan. La API tiene su propia página: <a id="link-api" href="https://claude.ai/artifact/27a9UF3nvTpzpMe7m1ajva">Arquitectura API DatHua</a>.</p>
+    <div class="legend" aria-label="Módulos">
+      <span class="m-org"><i></i>Organización y acceso</span>
+      <span class="m-infra"><i></i>Sucursales, zonas y equipos</span>
+      <span class="m-disc"><i></i>Descubrimiento</span>
+      <span class="m-alert"><i></i>Incidentes y avisos</span>
+      <span class="m-mongo"><i></i>Series de tiempo (MongoDB)</span>
+    </div>
+    <div class="idea">
+      <div><b>La organización es el muro</b><p>Todo cuelga de <code>organizations</code>. Cada consulta filtra por la organización del token o por la sucursal dueña de la Site API Key.</p></div>
+      <div><b>MySQL guarda el estado</b><p>Quién es el cliente, qué equipos tiene, cómo están ahora y qué incidentes siguen abiertos.</p></div>
+      <div><b>MongoDB guarda la historia</b><p>Cada medición de ping, cada 20 segundos, y cada anomalía que encontró la IA. Se cruzan por el <code>nodeId</code>.</p></div>
+    </div>
+  </header>
+
+  <nav class="nav" aria-label="Secciones">
+    <a href="#tablas">Tablas</a><a href="#mongo">Colecciones</a><a href="#recorrido">Recorrido de una medición</a><a href="#descubrimiento">Descubrimiento</a><a href="#estados">Estados</a>
+    <a href="#planes">Planes y límites</a><a href="#aislamiento">Aislamiento</a><a href="#silencio">Mantenimiento y retención</a><a href="#migraciones">Migraciones</a>
+  </nav>
+
+  <section id="tablas">
+    <div class="sec-head">
+      <h2>Tablas y relaciones</h2>
+      <p>Cada flecha sale de la columna que hace referencia y llega a la tabla referenciada. Las líneas punteadas son referencias sin llave foránea: entre MySQL y MongoDB, o columnas que la API llena pero la base no obliga. Están ocultas hasta que eliges una tabla.</p>
+    </div>
+    <div class="toolbar">
+      <label for="showLogical"><input type="checkbox" id="showLogical"> Mostrar referencias sin llave foránea</label>
+      <span><span class="bd pk">PK</span> llave primaria</span>
+      <span><span class="bd">FK</span> llave foránea</span>
+      <span><span class="bd l">lógica</span> referencia sin FK</span>
+      <span><span class="bd u">único</span> no se repite</span>
+    </div>
+    <div class="scroller"><div class="er" id="er"><svg class="links" id="erLinks"></svg></div></div>
+    <div class="detail" id="detail" aria-live="polite"></div>
+  </section>
+
+  <section id="mongo">
+    <div class="sec-head">
+      <h2>Colecciones de MongoDB</h2>
+      <p>Las dos colecciones viven en MongoDB Atlas y repiten <code>org_id</code>, <code>site_id</code> y <code>node_id</code> en <code>metadata</code>. Así cada consulta filtra por organización sin tener que preguntarle a MySQL.</p>
+    </div>
+    <div class="docs2">
+      <div class="coll">
+        <div class="coll-h"><h3>node_metrics</h3><span>Serie de tiempo</span></div>
+        <p>Una medición de ping por equipo cada 20 segundos. La escribe solo <code>POST /api/telemetry/report</code>. La leen Métricas en vivo, los reportes de auditoría y el cron de IA.</p>
+<pre class="json">{
+  <span class="k">"captured_at"</span>: <span class="s">"2026-10-20T15:42:20Z"</span>,  <span class="c">// timeField</span>
+  <span class="k">"metadata"</span>: {                         <span class="c">// metaField</span>
+    <span class="k">"node_id"</span>: 128, <span class="k">"org_id"</span>: 16, <span class="k">"site_id"</span>: 30,
+    <span class="k">"zone_id"</span>: null, <span class="k">"protocol"</span>: <span class="s">"ICMP"</span>, <span class="k">"target"</span>: <span class="s">"192.168.1.1"</span>
+  },
+  <span class="k">"status"</span>: <span class="s">"UP"</span>,           <span class="c">// UP | DOWN</span>
+  <span class="k">"transmitted"</span>: 5, <span class="k">"received"</span>: 5, <span class="k">"loss_percent"</span>: 0,
+  <span class="k">"min_ms"</span>: 1.1, <span class="k">"max_ms"</span>: 2.3, <span class="k">"avg_ms"</span>: 1.6,
+  <span class="k">"stddev_ms"</span>: 0.4, <span class="k">"jitter_ms"</span>: 0.3,
+  <span class="k">"rtts_ms"</span>: [1.1, 1.5, 2.3, 1.6, 1.5],
+  <span class="k">"error"</span>: null
+}</pre>
+        <dl class="kv">
+          <dt>Tipo</dt><dd>Colección time series, granularidad en segundos, cubetas de 1 hora</dd>
+          <dt>Índices</dt><dd><code>metadata + captured_at</code> y <code>metadata.node_id + captured_at</code></dd>
+          <dt>Modelo</dt><dd><code>dathua-api/src/models/IcmpMetric.js</code></dd>
+          <dt>Sin TTL</dt><dd>Hoy no se borra sola. Crece unos 4,300 documentos por equipo al día.</dd>
+        </dl>
+      </div>
+      <div class="coll">
+        <div class="coll-h"><h3>ai_anomalies</h3><span>Colección normal</span></div>
+        <p>Cada anomalía que devolvió el motor de IA. La escribe el cron de IA a través de <code>aiService.saveAnomalies</code>. La leen IA Sentinel, el detalle de equipo y el Resumen.</p>
+<pre class="json">{
+  <span class="k">"timestamp"</span>: <span class="s">"2026-10-20T15:44:00Z"</span>,
+  <span class="k">"metadata"</span>: { <span class="k">"node_id"</span>: 128, <span class="k">"org_id"</span>: 16, <span class="k">"site_id"</span>: 30, ... },
+  <span class="k">"metricAnalyzed"</span>: <span class="s">"avg_ms"</span>,   <span class="c">// avg_ms | loss_percent | jitter_ms | stddev_ms</span>
+  <span class="k">"observed_value"</span>: 262.6,
+  <span class="k">"expected_Baseline"</span>: 17.5,
+  <span class="k">"anomalyScore"</span>: 0.869,       <span class="c">// 0 a 1; la UI oculta ≤ 0.7</span>
+  <span class="k">"classification"</span>: <span class="s">"HIGH"</span>,    <span class="c">// CRITICAL | HIGH | MEDIUM | LOW</span>
+  <span class="k">"model_confidence"</span>: 0.863,
+  <span class="k">"reviewed"</span>: false, <span class="k">"is_false_positive"</span>: false,
+  <span class="k">"source"</span>: <span class="s">"dathua-ia"</span>, <span class="k">"version"</span>: <span class="s">"2.0"</span>
+}</pre>
+        <dl class="kv">
+          <dt>Índices</dt><dd><code>metadata.node_id + timestamp</code>, <code>classification + reviewed</code>, <code>timestamp</code></dd>
+          <dt>Hacia MySQL</dt><dd>Si es CRITICAL o HIGH, su <code>_id</code> queda en <code>incidents.mongoAnomalyId</code></dd>
+          <dt>Modelo</dt><dd><code>dathua-api/src/models/AiAnomaly.js</code></dd>
+          <dt>Revisión</dt><dd>“Es real” o “Falso positivo” cambian <code>reviewed</code> e <code>is_false_positive</code></dd>
+        </dl>
+      </div>
+    </div>
+    <p class="note">En el clúster también existen <code>icmp_metrics</code> (colección normal) y <code>node_telemetry</code> (serie de tiempo). Las dos están vacías y ningún archivo del código las usa. Son restos de versiones anteriores y se pueden borrar.</p>
+  </section>
+
+  <section id="recorrido">
+    <div class="sec-head">
+      <h2>Recorrido de una medición</h2>
+      <p>De izquierda a derecha: qué pasa desde que el agente hace ping a un equipo hasta que el dueño ve la campanita. Los pasos 1 a 5 se repiten cada 20 segundos. Los pasos 6 a 10 corren cada 2 minutos.</p>
+    </div>
+    <div class="scroller"><div class="lanes" id="lanes"><svg id="laneLinks"></svg></div></div>
+  </section>
+
+  <section id="descubrimiento">
+    <div class="sec-head">
+      <h2>Descubrimiento de equipos</h2>
+      <p>El agente encuentra equipos en la red del cliente, pero no los da de alta solo. Quedan como candidatos hasta que el dueño los aprueba, para no cobrar nodos extra sin su permiso.</p>
+    </div>
+    <div class="strip m-disc">
+      <div><span class="when">Agente · cada 30 min</span><b>Barre la red</b><p>Ping a toda la subred, lee la tabla ARP (<code>arp -a</code> en Windows, <code>ip neigh</code> en Linux) y prueba los puertos 22, 23, 80, 443, 554, 3389 y 9100.</p></div>
+      <div><span class="when">Solo agente Linux</span><b>Pregunta por SNMP</b><p>Con la community <code>public</code> lee el nombre y la descripción del equipo y su tabla LLDP de vecinos. Si no contesta, no pasa nada.</p></div>
+      <div><span class="when">API</span><b>Clasifica</b><p>Sugiere tipo y marca a partir de la descripción SNMP, la MAC y los puertos abiertos.</p><div class="chips"><span class="chip ep">POST /api/discovery/candidates</span></div></div>
+      <div><span class="when">MySQL</span><b>Guarda o actualiza</b><p>Una fila por IP y sucursal. Si el vecino LLDP coincide con la MAC de un equipo ya dado de alta, se sugiere como padre.</p><div class="chips"><span class="chip st">discovery_candidates</span></div></div>
+      <div><span class="when">Dashboard</span><b>El dueño decide</b><p>Aprobar crea el nodo con nombre, tipo, zona y padre. Rechazar lo oculta.</p><div class="chips"><span class="chip ep">/approve</span><span class="chip ep">/reject</span></div></div>
+      <div><span class="when">Botón Re-escanear</span><b>Adelanta el ciclo</b><p>Marca <code>sites.rescanRequestedAt</code>. El agente la ve en menos de 10 s y escanea sin esperar los 30 minutos.</p><div class="chips"><span class="chip ep">POST /api/sites/:id/rescan</span></div></div>
+    </div>
+  </section>
+
+  <section id="estados">
+    <div class="sec-head">
+      <h2>Estados</h2>
+      <p>Las cuatro máquinas de estado del sistema. El borde naranja marca el estado inicial. Las flechas punteadas son transiciones manuales o todavía no construidas.</p>
+    </div>
+    <div class="states">
+      <div class="card">
+        <h3>Equipo · <code>nodes.status</code></h3>
+        <div class="svg-scroll"><svg class="st" viewBox="0 0 560 190" role="img" aria-label="Estados de un equipo">
+          <defs>
+            <marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+          </defs>
+          <rect x="16" y="74" width="118" height="40" rx="8" class="start"/><text x="75" y="99" text-anchor="middle">Unknown</text>
+          <rect x="230" y="22" width="118" height="40" rx="8" class="good"/><text x="289" y="47" text-anchor="middle">Online</text>
+          <rect x="230" y="128" width="118" height="40" rx="8" class="bad"/><text x="289" y="153" text-anchor="middle">Offline</text>
+          <rect x="426" y="74" width="122" height="40" rx="8" class="dash"/><text x="487" y="99" text-anchor="middle">Warning · Critical</text>
+          <path d="M134 86 C180 86 185 42 228 42" marker-end="url(#ah1)"/><text class="lbl" x="150" y="54">responde</text>
+          <path d="M134 102 C180 102 185 148 228 148" marker-end="url(#ah1)"/><text class="lbl" x="140" y="146">no responde</text>
+          <path d="M276 62 L276 126" marker-end="url(#ah1)"/>
+          <path d="M302 126 L302 64" marker-end="url(#ah1)"/><text class="lbl" x="310" y="98">cada reporte</text>
+          <path class="dash" d="M348 42 C392 42 400 80 424 88" marker-end="url(#ah1)"/><text class="lbl" x="372" y="34">solo a mano</text>
+          <path class="dash" d="M348 148 C392 148 400 108 424 100" marker-end="url(#ah1)"/>
+        </svg></div>
+        <p>La telemetría solo escribe Online u Offline. Warning y Critical existen en el enum pero solo se asignan editando el equipo. Un equipo nuevo empieza en Unknown y también vuelve ahí cuando se limpian datos de prueba.</p>
+      </div>
+
+      <div class="card">
+        <h3>Candidato · <code>discovery_candidates.status</code></h3>
+        <div class="svg-scroll"><svg class="st" viewBox="0 0 560 200" role="img" aria-label="Estados de un candidato descubierto">
+          <defs>
+            <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+            <marker id="ah2r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="ah-red"/></marker>
+          </defs>
+          <rect x="16" y="78" width="118" height="40" rx="8" class="start"/><text x="75" y="103" text-anchor="middle">pending</text>
+          <rect x="230" y="30" width="118" height="40" rx="8" class="good"/><text x="289" y="55" text-anchor="middle">approved</text>
+          <rect x="230" y="126" width="118" height="40" rx="8" class="bad"/><text x="289" y="151" text-anchor="middle">rejected</text>
+          <rect x="430" y="30" width="118" height="40" rx="8"/><text x="489" y="55" text-anchor="middle">nodo creado</text>
+          <path d="M134 90 C180 90 185 50 228 50" marker-end="url(#ah2)"/><text class="lbl" x="152" y="64">Aprobar</text>
+          <path d="M134 106 C180 106 185 146 228 146" marker-end="url(#ah2)"/><text class="lbl" x="150" y="142">Rechazar</text>
+          <path d="M348 50 L428 50" marker-end="url(#ah2)"/><text class="lbl" x="356" y="42">crea en nodes</text>
+          <path class="dash red" d="M262 30 C262 4 75 4 75 76" marker-end="url(#ah2r)"/><text class="lbl" x="128" y="16">se borró su nodo</text>
+          <path class="dash red" d="M262 166 C262 194 75 194 75 120" marker-end="url(#ah2r)"/><text class="lbl" x="104" y="190">el agente reinicia o Re-escanear</text>
+        </svg></div>
+        <p>Mientras el mismo proceso del agente sigue corriendo, un rechazado se queda oculto aunque se vuelva a ver en la red. Solo regresa a pending cuando llega <code>sessionStart: true</code>.</p>
+      </div>
+
+      <div class="card">
+        <h3>Suscripción · <code>organizations.subscriptionStatus</code></h3>
+        <div class="svg-scroll"><svg class="st" viewBox="0 0 560 190" role="img" aria-label="Estados de la suscripción">
+          <defs>
+            <marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+          </defs>
+          <rect x="16" y="74" width="118" height="40" rx="8" class="start"/><text x="75" y="99" text-anchor="middle">trialing</text>
+          <rect x="230" y="22" width="118" height="40" rx="8" class="good"/><text x="289" y="47" text-anchor="middle">active</text>
+          <rect x="230" y="128" width="118" height="40" rx="8" class="bad"/><text x="289" y="153" text-anchor="middle">expired</text>
+          <rect x="430" y="74" width="118" height="40" rx="8" class="bad"/><text x="489" y="99" text-anchor="middle">cancelled</text>
+          <path class="dash" d="M134 86 C180 86 185 42 228 42" marker-end="url(#ah3)"/><text class="lbl" x="140" y="54">pago (sin integrar)</text>
+          <path d="M134 102 C180 102 185 148 228 148" marker-end="url(#ah3)"/><text class="lbl" x="136" y="146">vencen 30 días</text>
+          <path class="dash" d="M289 126 L289 64" marker-end="url(#ah3)"/><text class="lbl" x="297" y="98">pago</text>
+          <path class="dash" d="M348 42 C392 42 400 80 428 88" marker-end="url(#ah3)"/><text class="lbl" x="380" y="34">cancela</text>
+        </svg></div>
+        <p>El paso a expired lo hace <code>verifyToken</code> en la primera petición después de <code>trialEndsAt</code>. Desde ahí el dashboard recibe 402, pero el agente sigue reportando para no perder datos. El paso a active espera el webhook del proveedor de pagos.</p>
+      </div>
+
+      <div class="card">
+        <h3>Incidente · <code>incidents.isResolved</code></h3>
+        <div class="svg-scroll"><svg class="st" viewBox="0 0 560 150" role="img" aria-label="Estados de un incidente">
+          <defs>
+            <marker id="ah4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+          </defs>
+          <rect x="16" y="70" width="118" height="40" rx="8" class="start"/><text x="75" y="95" text-anchor="middle">abierto</text>
+          <rect x="230" y="70" width="118" height="40" rx="8" class="good"/><text x="289" y="95" text-anchor="middle">resuelto</text>
+          <rect x="430" y="70" width="118" height="40" rx="8" class="bad"/><text x="489" y="95" text-anchor="middle">eliminado</text>
+          <path d="M134 90 L228 90" marker-end="url(#ah4)"/><text class="lbl" x="150" y="82">Resolver</text>
+          <path d="M348 90 L428 90" marker-end="url(#ah4)"/><text class="lbl" x="364" y="82">Eliminar</text>
+          <path d="M75 70 C75 20 489 20 489 68" marker-end="url(#ah4)"/><text class="lbl" x="260" y="30">Eliminar</text>
+          <text class="lbl" x="16" y="136">Nace por la IA (CRITICAL o HIGH) o a mano desde Centro de Incidentes.</text>
+        </svg></div>
+        <p>La IA no abre un segundo incidente del mismo tipo en un equipo que ya tiene uno abierto. Resolver guarda <code>resolvedAt</code>. Eliminar es borrado real, y sus notificaciones quedan con <code>incidentId</code> en NULL.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="planes">
+    <div class="sec-head">
+      <h2>Planes y límites</h2>
+      <p>Los límites viven en un solo archivo, <code>dathua-api/src/config/plans.js</code>. Las sucursales tienen tope duro. Los nodos de más se permiten y se cobran aparte.</p>
+    </div>
+    <div class="tablebox"><table>
+      <thead><tr><th>Concepto</th><th>Básico</th><th>Pro</th><th>Cómo se aplica</th></tr></thead>
+      <tbody>
+        <tr><td>Precio mensual</td><td class="num">$449 MXN</td><td class="num">$1,199 MXN</td><td>Prueba gratuita de 30 días (<code>TRIAL_DAYS</code>), sin plan gratis permanente</td></tr>
+        <tr><td>Sucursales</td><td class="num">1</td><td class="num">3</td><td>Tope duro. <code>SELECT … FOR UPDATE</code> sobre la organización y 403 <code>SITE_LIMIT_REACHED</code></td></tr>
+        <tr><td>Nodos por sucursal</td><td class="num">12</td><td class="num">15</td><td>No se bloquea. Cada nodo extra cuesta $50 MXN al mes (<code>EXTRA_NODE_PRICE_MXN</code>)</td></tr>
+        <tr><td>Zonas</td><td class="num">3</td><td class="num">3</td><td><code>organizations.maxFreeZones</code>, igual para los dos planes a propósito</td></tr>
+        <tr><td>Prueba vencida</td><td colspan="2">402 <code>TRIAL_EXPIRED</code> o <code>SUBSCRIPTION_INACTIVE</code></td><td>Solo en rutas con JWT. El agente con Site API Key no se corta</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="aislamiento">
+    <div class="sec-head">
+      <h2>Aislamiento por organización</h2>
+      <p>No hay roles dentro de una organización: todos sus usuarios ven lo mismo. La barrera es entre organizaciones, y la pone la API en cada consulta. MySQL no tiene seguridad por fila.</p>
+    </div>
+    <div class="tablebox"><table>
+      <thead><tr><th>Dato</th><th>Credencial</th><th>Cómo se filtra</th></tr></thead>
+      <tbody id="iso"></tbody>
+    </table></div>
+  </section>
+
+  <section id="silencio">
+    <div class="sec-head">
+      <h2>Mantenimiento y retención</h2>
+      <p>Dos mecanismos que deciden qué se guarda y qué se avisa. Ninguno necesita un cron para apagarse.</p>
+    </div>
+    <div class="strip m-alert">
+      <div><span class="when">nodes · sites</span><b>Silenciar indefinido</b><p><code>maintenanceMode = TRUE</code> hasta que el dueño lo quite.</p></div>
+      <div><span class="when">nodes · sites</span><b>Silenciar por tiempo</b><p><code>maintenanceUntil</code> con fecha futura. Se considera apagado en cuanto pasa la fecha.</p></div>
+      <div><span class="when">Efecto</span><b>La anomalía sí se guarda</b><p>Queda en <code>ai_anomalies</code>, pero no crea incidente ni notificación. Silenciar la sucursal silencia todos sus equipos.</p></div>
+      <div><span class="when">notification_preferences</span><b>A quién avisar</b><p>Por severidad: CRITICAL y HIGH sí por defecto, MEDIUM y LOW no. INFO cuenta como LOW.</p></div>
+      <div><span class="when">Diario 03:00</span><b>Retención</b><p>Borra notificaciones más viejas que <code>retentionDays</code>: 7, 30 (por defecto) o nunca.</p></div>
+    </div>
+  </section>
+
+  <section id="migraciones">
+    <div class="sec-head">
+      <h2>Migraciones</h2>
+      <p>La base se crea con <code>dathua_schema_final.sql</code> y los cambios posteriores van en <code>dathua-api/migrations/</code>. Las nueve están aplicadas en la base local.</p>
+    </div>
+    <div class="tablebox"><table>
+      <thead><tr><th>Archivo</th><th>Qué cambia</th><th>En el script final</th></tr></thead>
+      <tbody id="mig"></tbody>
+    </table></div>
+    <p class="note">El script final no incluye las cinco columnas SNMP de la migración 010. Una base nueva creada solo con ese script falla al recibir candidatos del agente. Hay que correr también la 010 o agregar esas columnas al script.</p>
+  </section>
+</div>
+
+<script>
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* cols: [nombre, tipo, bandera(pk|u|null), tabla referenciada, lógica?] */
+const T = {
+  organizations: {mod:'org', cols:[['orgId','int','pk'],['name','varchar(100)'],['maxFreeZones','int · 3'],['plan','BASICO | PRO'],['subscriptionStatus','enum'],['trialEndsAt','datetime'],['status','Active | Inactive'],['createdAt','fecha'],['updatedAt','fecha']],
+    desc:'El cliente: una PyME con su plan, su prueba gratuita y su estado de suscripción. Todo lo demás cuelga de aquí.',
+    lee:['verifyToken en cada petición del dashboard','Uso del plan y límites'], escribe:['El registro crea la fila en plan BASICO y trialing','verifyToken la marca expired al vencer la prueba'],
+    reglas:['Borrar la organización borra en cascada usuarios y sucursales','trialEndsAt = registro + TRIAL_DAYS','Su fila se bloquea con FOR UPDATE al crear sucursales o zonas'],
+    ep:['POST /api/auth/register','GET /api/organizations/usage']},
+  users: {mod:'org', cols:[['userId','int','pk'],['orgId','int',null,'organizations'],['name','varchar(100)'],['email','varchar(150)','u'],['password','bcrypt'],['createdAt','fecha'],['updatedAt','fecha']],
+    desc:'Las personas que entran al dashboard. Hoy cada registro crea una organización con un solo usuario; no hay roles ni invitaciones.',
+    lee:['El login','Mi perfil','El servicio de notificaciones, para saber a quién avisar'], escribe:['El registro','Mi perfil: nombre, correo y contraseña'],
+    reglas:['El correo es único por organización, no global','El login prueba la contraseña contra cada cuenta con ese correo','Contraseña con bcrypt, 10 rondas; mínimo 8 caracteres al cambiarla','JWT de 24 horas con userId, orgId y email'],
+    ep:['POST /api/auth/login','GET /api/users/me','PUT /api/users/me','PATCH /api/users/me/password']},
+  notification_preferences: {mod:'org', cols:[['userId','int','pk','users'],['notifyCritical','bool · sí'],['notifyHigh','bool · sí'],['notifyMedium','bool · no'],['notifyLow','bool · no'],['retentionDays','7 | 30 | NULL'],['createdAt','fecha'],['updatedAt','fecha']],
+    desc:'Qué severidades le avisan a cada usuario y cuántos días se guarda su historial de notificaciones.',
+    lee:['notifyIncident antes de crear notificaciones','El cron de retención'], escribe:['Mi perfil'],
+    reglas:['Si el usuario no tiene fila, se usan los valores por defecto','retentionDays NULL significa nunca borrar'],
+    ep:['GET /api/notifications/preferences','PUT /api/notifications/preferences']},
+  sites: {mod:'infra', cols:[['siteId','int','pk'],['orgId','int',null,'organizations'],['name','varchar(100)'],['address','varchar(255)'],['timezone','America/Mexico_City'],['status','Normal…Offline'],['description','text'],['apiKey','dth_site_…','u'],['maintenanceMode','bool'],['maintenanceUntil','datetime'],['rescanRequestedAt','datetime'],['createdAt','fecha'],['updatedAt','fecha']],
+    desc:'Una sucursal del cliente. Tiene su propia Site API Key, que es la credencial con la que su agente reporta.',
+    lee:['El dashboard, por orgId','El agente, por su apiKey'], escribe:['Sucursales y zonas: alta, edición, baja','Modo mantenimiento','Botón Re-escanear'],
+    reglas:['Tope de sucursales por plan','apiKey = dth_site_ + 48 hex aleatorios, única','Borrarla borra en cascada zonas, nodos, candidatos e incidentes','status solo cambia a mano'],
+    ep:['GET /api/sites','POST /api/sites','GET /api/sites/:id/apikey','POST /api/sites/:id/rescan','PATCH /api/sites/:id/maintenance']},
+  zones: {mod:'infra', cols:[['zoneId','int','pk'],['siteId','int',null,'sites'],['name','varchar(100)'],['description','text'],['icon','building…'],['createdAt','fecha'],['updatedAt','fecha']],
+    desc:'Un área dentro de la sucursal: un piso, la bodega, la oficina. Agrupa equipos en las gráficas.',
+    lee:['Métricas en vivo, para filtrar por zona','Nodos y topología'], escribe:['Sucursales y zonas'],
+    reglas:['Máximo maxFreeZones por organización (3)','Íconos: building, floor, warehouse, office, outdoor, server_room','Al borrarla, sus nodos quedan sin zona, o se borran si se pide deleteNodes=true'],
+    ep:['GET /api/zones/site/:siteId','POST /api/zones/site/:siteId','PUT /api/zones/:id','DELETE /api/zones/:id']},
+  nodes: {mod:'infra', cols:[['nodeId','int','pk'],['siteId','int',null,'sites'],['zoneId','int',null,'zones'],['parentNodeId','int',null,'nodes'],['name','varchar(100)'],['deviceType','enum'],['isRootGateway','bool'],['ipAddress','varchar(45)'],['macAddress','varchar(17)'],['snmpEnabled','bool'],['snmpVersion…PrivPass','9 columnas'],['status','Unknown…'],['lastPingMs','decimal'],['lastSeenAt','timestamp'],['maintenanceMode','bool'],['maintenanceUntil','datetime'],['createdAt','fecha'],['updatedAt','fecha']],
+    desc:'Cada equipo monitoreado: router, switch, access point, cámara, servidor o equipo final. El árbol de topología se arma con parentNodeId.',
+    lee:['El agente, para saber a quién hacer ping','Todo el dashboard'], escribe:['Nodos y topología','Aprobar un candidato','La telemetría actualiza status, lastPingMs y lastSeenAt'],
+    reglas:['La API rechaza jerarquías con ciclos revisando toda la cadena de padres','Zona y padre deben ser de la misma sucursal','Nodos sobre el límite del plan se permiten y se cobran','Credenciales SNMP en texto plano, pospuesto a propósito'],
+    ep:['GET /api/nodes/site/:siteId','POST /api/nodes','PUT /api/nodes/:id','GET /api/nodes/worker/active']},
+  discovery_candidates: {mod:'disc', cols:[['candidateId','int','pk'],['siteId','int',null,'sites'],['ipAddress','varchar(45)','u'],['macAddress','varchar(17)'],['hostname','varchar(255)'],['openPorts','json'],['suggestedDeviceType','enum'],['suggestedVendor','varchar(100)'],['status','pending…'],['resolvedNodeId','int',null,'nodes'],['snmpReachable','bool'],['snmpSysDescr','varchar(500)'],['snmpSysObjectId','varchar(100)'],['snmpSysName','varchar(255)'],['lldpNeighbors','json'],['firstSeenAt','timestamp'],['lastSeenAt','timestamp']],
+    desc:'Equipos que el agente encontró solo en la red. No cuentan ni se cobran hasta que el dueño los aprueba.',
+    lee:['Equipos descubiertos en Resumen y en Nodos'], escribe:['El agente con su Site API Key','Aprobar o rechazar desde el dashboard'],
+    reglas:['Una fila por sucursal + IP (uq_site_ip)','Un aprobado vuelve a pending si se borra su nodo','Un rechazado vuelve a pending solo con sessionStart','El padre sugerido sale de cruzar lldpNeighbors con nodes.macAddress'],
+    ep:['POST /api/discovery/candidates','GET /api/discovery/sites/:siteId/candidates','POST …/:id/approve','POST …/:id/reject']},
+  incidents: {mod:'alert', cols:[['incidentId','bigint','pk'],['nodeId','int',null,'nodes'],['siteId','int',null,'sites'],['severity','varchar(30)'],['type','AI_HIGH…'],['title','varchar(200)'],['message','text'],['mongoAnomalyId','ObjectId',null,'ai_anomalies',true],['metricAnalyzed','varchar(30)'],['isResolved','bool'],['startedAt','timestamp'],['resolvedAt','timestamp']],
+    desc:'Un problema que merece atención. Lo abre la IA con una anomalía CRITICAL o HIGH, o el dueño a mano.',
+    lee:['Centro de Incidentes','Resumen','Detalle de equipo','Reporte de auditoría'], escribe:['aiService.saveAnomalies','Crear incidente manual','Resolver y eliminar, uno o en bloque'],
+    reglas:['nodeId pasa a NULL si se borra el equipo: el historial se conserva','Título y mensaje en español simple (incidentCopy.js)','Severidad manual: CRITICAL, HIGH, MEDIUM, LOW o INFO','Las acciones en bloque exigen siteId'],
+    ep:['GET /api/incidents','POST /api/incidents','PATCH /api/incidents/:id/resolve','PATCH /api/incidents/bulk-resolve','DELETE /api/incidents/bulk']},
+  notifications: {mod:'alert', cols:[['notificationId','bigint','pk'],['userId','int',null,'users'],['orgId','int',null,'organizations',true],['incidentId','bigint',null,'incidents'],['nodeId','int',null,'nodes'],['siteId','int',null,'sites',true],['severity','varchar(30)'],['title','varchar(200)'],['message','text'],['link','/dashboard/…'],['isRead','bool'],['createdAt','timestamp']],
+    desc:'La campanita. Una fila por usuario por incidente, guardada para que una futura app móvil pida su historial.',
+    lee:['La campanita y su contador','Historial de notificaciones'], escribe:['notifyIncident al crearse un incidente','El usuario: leer y borrar','El cron de retención'],
+    reglas:['Solo los incidentes generan notificación','orgId y siteId no tienen llave foránea','Se emite en vivo a la sala user_{userId}'],
+    ep:['GET /api/notifications','GET /api/notifications/unread-count','PATCH /api/notifications/read-all']},
+  node_metrics: {mod:'mongo', doc:true, cols:[['_id','ObjectId','pk'],['captured_at','Date'],['metadata.node_id','Number',null,'nodes',true],['metadata.org_id','Number'],['metadata.site_id','Number'],['metadata.zone_id','Number'],['metadata.target','IP'],['status','UP | DOWN'],['transmitted · received','Number'],['loss_percent','%'],['min · max · avg_ms','ms'],['stddev_ms · jitter_ms','ms'],['rtts_ms','[Number]'],['error','String']],
+    desc:'MongoDB · serie de tiempo. Una medición de 5 pings por equipo cada 20 segundos.',
+    lee:['Métricas en vivo y gráficas','Reporte de auditoría','Cron de IA, ventana de 2 horas'], escribe:['Solo POST /api/telemetry/report'],
+    reglas:['El node_id debe ser de la sucursal dueña de la Site API Key','org_id y site_id los pone la API, no el agente','Sin expiración automática todavía'],
+    ep:['POST /api/telemetry/report','GET /api/metrics/site/:siteId/timeseries']},
+  ai_anomalies: {mod:'mongo', doc:true, cols:[['_id','ObjectId','pk'],['timestamp','Date'],['metadata.node_id','Number',null,'nodes',true],['metadata.org_id','Number'],['metadata.site_id','Number'],['metricAnalyzed','avg_ms…'],['observed_value','Number'],['expected_Baseline','Number'],['anomalyScore','0 a 1'],['classification','CRITICAL…LOW'],['model_confidence','Number'],['reviewed','Boolean'],['is_false_positive','Boolean']],
+    desc:'MongoDB · cada hallazgo del motor de IA, con el valor visto y el que se esperaba.',
+    lee:['IA Sentinel','Resumen','Detalle de equipo'], escribe:['El cron de IA','Revisar o eliminar, una o en bloque'],
+    reglas:['La UI y los contadores usan anomalyScore > 0.7 (ANOMALY_MIN_SCORE)','Se guarda aunque el equipo esté en mantenimiento'],
+    ep:['GET /api/ai/anomalies','GET /api/ai/stats','PATCH /api/ai/anomalies/:id/review','POST /api/ai/trigger-analysis']}
+};
+const LAYOUT = [
+  ['Organización',['organizations','users','notification_preferences']],
+  ['Infraestructura',['sites','zones']],
+  ['Equipos',['nodes','discovery_candidates']],
+  ['Alertas',['incidents','notifications']],
+  ['MongoDB',['node_metrics','ai_anomalies']]
+];
+const MODNAME = {org:'Acceso', infra:'Infraestructura', disc:'Descubrimiento', alert:'Alertas', mongo:'MongoDB'};
+
+const er = document.getElementById('er'), svg = document.getElementById('erLinks');
+const rels = [];
+LAYOUT.forEach(([lbl, col]) => {
+  const c = document.createElement('div'); c.className = 'er-col';
+  c.innerHTML = `<span class="lbl">${esc(lbl)}</span>`;
+  col.forEach(name => {
+    const t = T[name];
+    const box = document.createElement('div');
+    box.className = `tbl m-${t.mod}${t.doc ? ' doc' : ''}`;
+    box.dataset.t = name; box.tabIndex = 0; box.setAttribute('role','button');
+    box.setAttribute('aria-label', `${t.doc ? 'Colección' : 'Tabla'} ${name}`);
+    box.innerHTML = `<div class="tbl-h"><span class="tbl-name">${esc(name)}</span><span class="tbl-mod">${esc(MODNAME[t.mod])}</span></div>
+      <ul class="cols">${t.cols.map(([cn, ct, f, ref, logical]) => {
+        if (ref) rels.push({from:name, col:cn, to:ref, l:!!logical});
+        const badges = (f==='pk' ? '<span class="bd pk">PK</span>' : '') + (ref ? (logical ? '<span class="bd l">lógica</span>' : '<span class="bd">FK</span>') : '') + (f==='u' ? '<span class="bd u">único</span>' : '');
+        return `<li class="${ref ? 'fk' : ''}" data-c="${esc(name+'.'+cn)}"><span class="cn">${esc(cn)}</span>${badges}<span class="ct">${esc(ref && ref!==name ? '→ '+ref : ct)}</span></li>`;
+      }).join('')}</ul>`;
+    c.appendChild(box);
+  });
+  er.appendChild(c);
+});
+
+let selected = 'nodes';
+const showLogical = document.getElementById('showLogical');
+try { showLogical.checked = localStorage.getItem('dathua-logical') === '1'; } catch(e) {}
+
+function related(name){
+  const s = new Set();
+  rels.forEach(r => { if (r.from===name) s.add(r.to); if (r.to===name) s.add(r.from); });
+  s.delete(name); return [...s];
+}
+function draw(){
+  const cr = er.getBoundingClientRect();
+  svg.setAttribute('width', er.scrollWidth); svg.setAttribute('height', er.scrollHeight);
+  const out = [`<defs><marker id="erA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--line-strong)"/></marker><marker id="erAon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--accent)"/></marker></defs>`];
+  rels.forEach(r => {
+    const touches = selected && (r.from===selected || r.to===selected);
+    if (r.l && !showLogical.checked && !touches) return;
+    const row = er.querySelector(`[data-c="${CSS.escape(r.from+'.'+r.col)}"]`);
+    const tbox = er.querySelector(`[data-t="${CSS.escape(r.to)}"]`);
+    const sbox = er.querySelector(`[data-t="${CSS.escape(r.from)}"]`);
+    if (!row || !tbox) return;
+    const rr = row.getBoundingClientRect(), tb = tbox.getBoundingClientRect(), sb = sbox.getBoundingClientRect();
+    const trow = tbox.querySelector('li').getBoundingClientRect();
+    const sy = rr.top - cr.top + rr.height/2, ty = trow.top - cr.top + trow.height/2;
+    let d;
+    if (tb.left > sb.right) {
+      const sx = sb.right - cr.left, tx = tb.left - cr.left - 2, dx = Math.max(36, (tx-sx)/2);
+      d = `M${sx} ${sy} C${sx+dx} ${sy} ${tx-dx} ${ty} ${tx} ${ty}`;
+    } else if (tb.right < sb.left) {
+      const sx = sb.left - cr.left, tx = tb.right - cr.left + 2, dx = Math.max(36, (sx-tx)/2);
+      d = `M${sx} ${sy} C${sx-dx} ${sy} ${tx+dx} ${ty} ${tx} ${ty}`;
+    } else {
+      const sx = sb.right - cr.left, tx = tb.right - cr.left + 2, bulge = 34 + Math.min(40, Math.abs(ty-sy)*0.08);
+      d = `M${sx} ${sy} C${sx+bulge} ${sy} ${tx+bulge} ${ty} ${tx} ${ty}`;
+    }
+    out.push(`<path d="${d}" class="${r.l ? 'l ' : ''}${touches ? 'on' : ''}" marker-end="url(#${touches ? 'erAon' : 'erA'})"/>`);
+  });
+  svg.innerHTML = out.join('');
+}
+function select(name){
+  selected = name;
+  const rel = related(name);
+  er.classList.toggle('sel', !!name);
+  er.querySelectorAll('.tbl').forEach(b => {
+    b.classList.toggle('on', b.dataset.t===name);
+    b.classList.toggle('rel', rel.includes(b.dataset.t));
+    b.setAttribute('aria-pressed', b.dataset.t===name);
+  });
+  renderDetail(name, rel);
+  draw();
+}
+function renderDetail(name, rel){
+  const t = T[name], box = document.getElementById('detail');
+  box.className = `detail m-${t.mod}`;
+  const li = a => `<ul>${a.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
+  box.innerHTML = `<div class="detail-head"><h3>${esc(name)}</h3><span class="tag">${esc(t.doc ? 'Colección MongoDB' : 'Tabla MySQL · ' + MODNAME[t.mod])}</span></div>
+    <p>${esc(t.desc)}</p>
+    <div class="detail-grid">
+      <div><span class="k">Quién la lee</span>${li(t.lee)}</div>
+      <div><span class="k">Quién escribe</span>${li(t.escribe)}</div>
+      <div><span class="k">Reglas</span>${li(t.reglas)}</div>
+      <div><span class="k">Se relaciona con</span><div class="chips">${rel.map(r => `<button class="chip" data-go="${esc(r)}">${esc(r)}</button>`).join('') || '<span class="note">Sin relaciones</span>'}</div>
+        <span class="k" style="margin-top:8px">Endpoints</span><div class="chips">${t.ep.map(r => `<span class="chip ep">${esc(r)}</span>`).join('')}</div></div>
+    </div>`;
+}
+document.getElementById('detail').addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) select(g.dataset.go); });
+er.addEventListener('click', e => { const b = e.target.closest('.tbl'); if (b) select(b.dataset.t); });
+er.addEventListener('keydown', e => { const b = e.target.closest('.tbl'); if (b && (e.key==='Enter' || e.key===' ')) { e.preventDefault(); select(b.dataset.t); } });
+showLogical.addEventListener('change', () => { try { localStorage.setItem('dathua-logical', showLogical.checked ? '1' : '0'); } catch(e) {} draw(); });
+
+/* Recorrido de una medición */
+const LANES = ['Agente en la LAN','API · dathua-api','Bases de datos','Motor de IA','Dashboard'];
+const LANEMOD = ['m-disc','m-org','m-mongo','m-infra','m-alert'];
+const STEPS = [
+  {l:0, t:'Pide su lista de equipos', p:'Con su Site API Key. La respuesta también trae la marca de Re-escanear.', c:['GET /nodes/worker/active']},
+  {l:0, t:'Mide cada equipo', p:'5 pings ICMP por equipo. Calcula promedio, mínimo, máximo, jitter y pérdida.', c:['ping_engine.py']},
+  {l:1, t:'Valida y acepta', p:'Límite de 10 reportes por minuto. Descarta los nodeId que no son de esa sucursal.', c:['POST /telemetry/report']},
+  {l:2, t:'Guarda historia y estado', p:'La medición va a Mongo. El equipo pasa a Online u Offline en MySQL con su última latencia.', c:['node_metrics','nodes']},
+  {l:4, t:'Se actualiza en vivo', p:'Evento a la sala de la sucursal. Las tarjetas y gráficas cambian sin recargar.', c:['telemetry:new']},
+  {l:1, t:'Cron cada 2 minutos', p:'Pide a Mongo solo las mediciones nuevas desde la corrida anterior, en orden cronológico.', c:['aiScheduler.js']},
+  {l:3, t:'Analiza', p:'Limpia ruido, compara contra el historial del equipo con EWMA, percentiles y CUSUM, ajusta por hora del día y prioriza.', c:['POST /api/analyze']},
+  {l:2, t:'Guarda la anomalía', p:'Cada hallazgo queda en Mongo y se avisa a IA Sentinel.', c:['ai_anomalies','anomaly:new']},
+  {l:1, t:'Decide si es incidente', p:'Solo CRITICAL o HIGH, sin mantenimiento y sin otro incidente abierto del mismo tipo en ese equipo.', c:['incidents','incidentCopy.js'], alt:'Si no cumple, se queda solo como anomalía.'},
+  {l:4, t:'Avisa al dueño', p:'Una notificación por usuario según sus preferencias, en la campanita y en Centro de Incidentes.', c:['notifications','incident:new','notification:new']}
+];
+const lanes = document.getElementById('lanes'), laneSvg = document.getElementById('laneLinks');
+LANES.forEach((name, i) => {
+  const bg = document.createElement('div'); bg.className = 'lane-bg'; bg.style.gridRow = i+1; if (i===0) bg.style.borderTop = '0'; lanes.appendChild(bg);
+  const lb = document.createElement('div'); lb.className = `lane-label ${LANEMOD[i]}`; lb.style.gridRow = i+1; lb.textContent = name; lanes.appendChild(lb);
+});
+STEPS.forEach((s, i) => {
+  const d = document.createElement('div');
+  d.className = `step ${LANEMOD[s.l]}`; d.style.gridRow = s.l+1; d.style.gridColumn = i+2; d.id = 'st'+i;
+  d.innerHTML = `<span class="n">Paso ${i+1}</span><b>${esc(s.t)}</b><p>${esc(s.p)}</p><div class="chips">${s.c.map(x => `<span class="chip">${esc(x)}</span>`).join('')}</div>${s.alt ? `<div class="alt">${esc(s.alt)}</div>` : ''}`;
+  lanes.appendChild(d);
+});
+function drawLanes(){
+  const cr = lanes.getBoundingClientRect();
+  laneSvg.setAttribute('width', lanes.scrollWidth); laneSvg.setAttribute('height', lanes.scrollHeight);
+  const out = [`<defs><marker id="lA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--line-strong)"/></marker></defs>`];
+  const R = i => document.getElementById('st'+i).getBoundingClientRect();
+  for (let i = 0; i < STEPS.length-1; i++) {
+    const a = R(i), b = R(i+1);
+    const sx = a.right-cr.left, sy = a.top-cr.top+Math.min(a.height/2, 40), tx = b.left-cr.left-2, ty = b.top-cr.top+Math.min(b.height/2, 40);
+    const dx = Math.max(12, (tx-sx)/2);
+    out.push(`<path d="M${sx} ${sy} C${sx+dx} ${sy} ${tx-dx} ${ty} ${tx} ${ty}" marker-end="url(#lA)"/>`);
+  }
+  laneSvg.innerHTML = out.join('');
+}
+
+/* Aislamiento */
+const ISO = [
+  ['Sucursales, zonas, nodos','JWT','orgId del token en el WHERE, con JOIN a sites cuando la tabla no tiene orgId'],
+  ['Incidentes y acciones en bloque','JWT','JOIN con sites por orgId; las acciones en bloque exigen siteId de la propia organización'],
+  ['Crear incidente manual','JWT','La sucursal debe ser de la organización y el nodeId de esa sucursal'],
+  ['Anomalías de IA y re-análisis','JWT','Filtro metadata.org_id en Mongo; un siteId ajeno simplemente no encuentra nada'],
+  ['Notificaciones','JWT','userId del token: cada quien ve solo las suyas'],
+  ['Telemetría del agente','Site API Key','La llave fija la sucursal; se descartan los node_id que no son de ella'],
+  ['Lista de equipos del agente','Site API Key','Solo los nodos de la sucursal dueña de la llave'],
+  ['Candidatos de descubrimiento','Site API Key','siteId tomado de la llave, nunca del cuerpo de la petición'],
+  ['Tiempo real','JWT en el handshake','join:site valida que la sucursal sea de la organización; sin emisiones globales']
+];
+document.getElementById('iso').innerHTML = ISO.map(([a,b,c]) => `<tr><td>${esc(a)}</td><td><span class="pill">${esc(b)}</span></td><td>${esc(c)}</td></tr>`).join('');
+
+/* Migraciones */
+const MIG = [
+  ['002_plan_trial_and_incident_fk','Plan, estado de suscripción y fin de prueba en organizations. incidents.nodeId pasa a NULL con ON DELETE SET NULL.',1],
+  ['003_discovery_candidates','Crea discovery_candidates.',1],
+  ['004_zone_icon','Ícono por zona.',1],
+  ['005_notifications','Crea notifications y notification_preferences.',1],
+  ['006_maintenance_mode','maintenanceMode y maintenanceUntil en nodes y sites.',1],
+  ['007_notification_retention','retentionDays en notification_preferences.',1],
+  ['008_site_rescan','sites.rescanRequestedAt para el botón Re-escanear.',1],
+  ['009_incident_metric','incidents.metricAnalyzed para explicar el incidente en español simple.',1],
+  ['010_discovery_snmp','snmpReachable, snmpSysDescr, snmpSysObjectId, snmpSysName y lldpNeighbors en discovery_candidates.',0]
+];
+document.getElementById('mig').innerHTML = MIG.map(([a,b,ok]) => `<tr><td><code>${esc(a)}.sql</code></td><td>${esc(b)}</td><td>${ok ? '<span class="pill ok">incluida</span>' : '<span class="pill warn">falta</span>'}</td></tr>`).join('');
+
+/* arranque */
+function redraw(){ draw(); drawLanes(); }
+select(selected);
+drawLanes();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(redraw);
+if ('ResizeObserver' in window) { const ro = new ResizeObserver(redraw); ro.observe(er); ro.observe(lanes); }
+window.addEventListener('resize', redraw);
+</script>
